@@ -133,11 +133,28 @@
   .dayjump { display:block; background:var(--soft); border:1px solid rgba(217,180,90,.35); border-radius:14px; padding:12px 14px; font-weight:600; color:var(--ink); text-decoration:none; }
   .dayjump small { display:block; font-weight:400; font-size:12px; color:var(--muted); margin-top:2px; }
 
+  /* Favoris, partage */
+  .star { border:0; background:none; color:var(--muted); font-size:20px; line-height:1; padding:4px 6px; margin-left:4px; cursor:pointer; vertical-align:2px; }
+  .star.on { color:var(--gold); text-shadow:0 0 10px rgba(217,180,90,.55); }
+  .club.fav h2 a { color:var(--gold-hi); }
+  .slotw, .roww { position:relative; }
+  .slotw .slot { height:100%; }
+  .slotw .slot b { padding-right:34px; }
+  .share { position:absolute; top:6px; right:6px; width:30px; height:30px; display:grid; place-items:center; border-radius:10px; border:1px solid var(--line); background:rgba(7,18,38,.5); color:var(--gold); cursor:pointer; }
+  .share:active { transform:scale(.92); background:var(--gold); color:#1A1405; }
+  .roww .row { padding-right:56px; }
+  .roww .share { top:50%; transform:translateY(-50%); right:10px; width:36px; height:36px; }
+  .roww .share:active { transform:translateY(-50%) scale(.92); }
+  .fs { color:var(--gold); font-style:normal; }
+  .hidebtn { margin-top:10px; border:0; background:none; color:var(--muted); font-size:13px; text-decoration:underline; padding:0; cursor:pointer; }
+
   /* Clubs */
-  .crow { display:block; text-decoration:none; color:var(--ink); padding:14px 0; border-top:1px solid var(--line); }
+  .crow { display:block; color:var(--ink); padding:14px 0; border-top:1px solid var(--line); }
+  .crow a { color:inherit; text-decoration:none; } .crow .sub { display:block; }
+  .crow.masked .nm { color:var(--muted); font-weight:600; font-size:16px; }
   .crow:first-child { border-top:0; padding-top:2px; }
   .crow .t { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:19px; font-weight:700; font-stretch:88%; }
-  .crow .t span { color:var(--gold); font-weight:400; font-size:22px; }
+  .crow .t > a { flex:1; }
   .crow small { display:block; color:var(--muted); font-size:14px; margin-top:2px; }
   .crow .next { color:var(--gold); font-weight:700; }
   .back { display:inline-block; color:var(--gold); text-decoration:none; font-weight:600; margin:0 0 10px; }
@@ -219,9 +236,35 @@ function km(c) {
 }
 const kmLabel = c => { const d = km(c); return d == null ? '' : `, ${d < 10 ? d.toFixed(1).replace('.', ',') : Math.round(d)} km`; };
 
-function visibleClubs() {
+// Favoris (épinglés en haut) et clubs masqués, gardés sur le téléphone
+let favs = new Set(), hiddenClubs = new Set();
+const isFav = c => favs.has(c.id);
+const favFirst = (x, y) => (isFav(y.c || y) - isFav(x.c || x));
+function visibleClubs(includeHidden = false) {
   const city = $('city').value;
-  return data.clubs.filter(c => !city || c.city === city);
+  return data.clubs.filter(c => (!city || c.city === city) && (includeHidden || !hiddenClubs.has(c.id)));
+}
+function starBtn(c) { return `<button class="star${isFav(c) ? ' on' : ''}" data-fav="${c.id}" aria-label="${isFav(c) ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${isFav(c) ? '★' : '☆'}</button>`; }
+
+// Partage d'un créneau (WhatsApp, Messages…) : texte prêt à envoyer + lien de réservation
+function shareBtn(c, start, durations, prices) {
+  const d = new Date(start.slice(0, 10) + 'T12:00');
+  const jour = cap(new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(d));
+  const min = prices.length ? Math.min(...prices) : null;
+  const lines = [`🎾 ${jour} · ${start.slice(11, 16).replace(':', 'h')} · ${c.name} (${c.city})`,
+    [durations, min != null ? `dès ${min} € le terrain (≈ ${Math.round(min / 4)} €/joueur)` : ''].filter(Boolean).join(' · '),
+    'Qui est chaud ?'];
+  const m = (slotAttrs(c, start).match(/href="([^"]+)"/) || [])[1];
+  const url = m ? m.replace(/&amp;/g, '&') : '';
+  return `<button class="share" data-text="${esc(lines.join('\n'))}" data-url="${esc(url)}" aria-label="Partager ce créneau"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>`;
+}
+// Pastille d'un horaire : lien de réservation + bouton partager
+function slotChip(c, g, t) {
+  const nCourts = new Set(g.map(s => s.court).filter(Boolean)).size;
+  const prices = g.map(s => s.price).filter(p => p != null);
+  const durations = [...new Set(g.map(s => s.duration))].sort((x, y) => x - y).map(dur).join('/');
+  const sub = [nCourts ? `${nCourts} terr., ${durations}` : durations, prices.length ? `dès ${Math.min(...prices)} €` : ''].filter(Boolean).join(', ');
+  return `<div class="slotw"><a class="slot" ${slotAttrs(c, g[0].start)}><b>${t}</b><small>${sub}</small></a>${shareBtn(c, g[0].start, durations, prices)}</div>`;
 }
 // Créneaux d'un club pour une date, selon les filtres
 function filtered(a, d) {
@@ -280,18 +323,12 @@ function clubCard(c, a) {
   else {
     const groups = {};
     filtered(a, date).forEach(s => (groups[s.start.slice(11, 16)] ||= []).push(s));
-    const chips = Object.entries(groups).map(([t, ss]) => {
-      const nCourts = new Set(ss.map(s => s.court).filter(Boolean)).size;
-      const prices = ss.map(s => s.price).filter(p => p != null);
-      const durations = [...new Set(ss.map(s => s.duration))].sort((x, y) => x - y).map(dur).join('/');
-      const sub = [nCourts ? `${nCourts} terr., ${durations}` : durations, prices.length ? `dès ${Math.min(...prices)} €` : ''].filter(Boolean).join(', ');
-      return `<a class="slot" ${slotAttrs(c, ss[0].start)}><b>${t}</b><small>${sub}</small></a>`;
-    }).join('');
+    const chips = Object.entries(groups).map(([t, ss]) => slotChip(c, ss, t)).join('');
     const n = Object.keys(groups).length;
     count = n ? `, <span class="count">${n} horaire${n > 1 ? 's' : ''} libre${n > 1 ? 's' : ''}</span>` : '';
     body = chips ? `<div class="slots">${chips}</div>` : '<div class="empty">Complet sur ces critères.</div>';
   }
-  return `<section class="club"><h2><a href="#club-${c.id}">${esc(c.name)}</a></h2><div class="meta">${esc(c.city)}${kmLabel(c)}${courts ? `, ${courts}` : ''}${count}</div>${body}</section>`;
+  return `<section class="club${isFav(c) ? ' fav' : ''}"><h2><a href="#club-${c.id}">${esc(c.name)}</a>${starBtn(c)}</h2><div class="meta">${esc(c.city)}${kmLabel(c)}${courts ? `, ${courts}` : ''}${count}</div>${body}</section>`;
 }
 
 function renderDay() {
@@ -301,8 +338,8 @@ function renderDay() {
     (['ok', 'fictif'].includes(a.status) ? live : other).push({ c, a, n: new Set(filtered(a, date).map(s => s.start)).size });
   }
   const byDist = (x, y) => (km(x.c) ?? 1e9) - (km(y.c) ?? 1e9);
-  live.sort(me ? byDist : (x, y) => y.n - x.n);
-  if (me) other.sort(byDist);
+  live.sort((x, y) => favFirst(x, y) || (me ? byDist(x, y) : y.n - x.n));
+  other.sort((x, y) => favFirst(x, y) || (me ? byDist(x, y) : 0));
   const nClubs = live.filter(x => x.n).length, nTimes = live.reduce((t, x) => t + x.n, 0);
   const tr = `${$('from').value}h et ${$('to').value === '24' ? 'minuit' : $('to').value + 'h'}`;
   const notOpen = live.length && live.every(x => !x.a.horizon || date > x.a.horizon);
@@ -326,7 +363,7 @@ function renderSearch() {
       seen[k].durations.add(s.duration); if (s.price != null) seen[k].prices.push(s.price);
     }
   }
-  rows.sort((x, y) => x.start.localeCompare(y.start) || ((km(x.c) ?? 0) - (km(y.c) ?? 0)));
+  rows.sort((x, y) => x.start.localeCompare(y.start) || favFirst(x, y) || ((km(x.c) ?? 0) - (km(y.c) ?? 0)));
   const fmt = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   let html = '', last = '';
   if (!wdays.size) return '<div class="empty">Choisis au moins un jour de la semaine.</div>';
@@ -341,7 +378,8 @@ function renderSearch() {
       last = d;
     }
     const p = r.prices.length ? `, dès ${Math.min(...r.prices)} €` : '';
-    html += `<a class="row" ${slotAttrs(r.c, r.start)}><b>${r.start.slice(11, 16)}</b><span class="c">${esc(r.c.name)}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${[...r.durations].sort((a, b) => a - b).map(dur).join('/')}${p}</small></span>›</a>`;
+    const durs = [...r.durations].sort((a, b) => a - b).map(dur).join('/');
+    html += `<div class="roww"><a class="row" ${slotAttrs(r.c, r.start)}><b>${r.start.slice(11, 16)}</b><span class="c">${isFav(r.c) ? '<i class="fs">★</i> ' : ''}${esc(r.c.name)}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${durs}${p}</small></span></a>${shareBtn(r.c, r.start, durs, r.prices)}</div>`;
   }
   if (rows.length > 60) html += `<div class="empty">… et ${rows.length - 60} autres créneaux.</div>`;
   return html;
@@ -353,13 +391,7 @@ function chipsFor(c, ss) {
   const href = bookingAttrs(c);
   const groups = {};
   ss.forEach(s => (groups[s.start.slice(11, 16)] ||= []).push(s));
-  return Object.entries(groups).map(([t, g]) => {
-    const nCourts = new Set(g.map(s => s.court).filter(Boolean)).size;
-    const prices = g.map(s => s.price).filter(p => p != null);
-    const durations = [...new Set(g.map(s => s.duration))].sort((x, y) => x - y).map(dur).join('/');
-    const sub = [nCourts ? `${nCourts} terr., ${durations}` : durations, prices.length ? `dès ${Math.min(...prices)} €` : ''].filter(Boolean).join(', ');
-    return `<a class="slot" ${slotAttrs(c, g[0].start)}><b>${t}</b><small>${sub}</small></a>`;
-  }).join('');
+  return Object.entries(groups).map(([t, g]) => slotChip(c, g, t)).join('');
 }
 
 const fmtShort = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -367,7 +399,7 @@ const fmtLong = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeri
 const cap = t => t[0].toUpperCase() + t.slice(1);
 
 function renderClubs() {
-  const rows = visibleClubs().map(c => {
+  const rows = visibleClubs(true).map(c => {
     const a = avail[c.id];
     const live = ['ok', 'fictif'].includes(a.status);
     const week = data.days.slice(0, 7);
@@ -376,24 +408,29 @@ function renderClubs() {
     if (live) for (const d of data.days) { const f = filtered(a, d); if (f.length) { next = f.sort((x, y) => x.start.localeCompare(y.start))[0]; break; } }
     return { c, a, live, nWeek, next };
   });
-  rows.sort((x, y) => (y.live - x.live) || (me ? (km(x.c) ?? 1e9) - (km(y.c) ?? 1e9) : y.nWeek - x.nWeek));
-  return rows.map(({ c, a, live, nWeek, next }) => {
+  rows.sort((x, y) => favFirst(x, y) || (y.live - x.live) || (me ? (km(x.c) ?? 1e9) - (km(y.c) ?? 1e9) : y.nWeek - x.nWeek));
+  const line = ({ c, a, live, nWeek, next }) => {
     let info;
     if (!live) info = a.status === 'adherents' ? 'Réservé aux adhérents' : a.status === 'erreur' ? 'Récupération impossible pour le moment' : 'Créneaux pas encore consultables ici';
     else if (next) info = `<span class="next">Prochain : ${fmtShort.format(new Date(next.start.slice(0, 10) + 'T12:00')).replace('.', '')} à ${next.start.slice(11, 16)}</span>, ${nWeek} horaire${nWeek > 1 ? 's' : ''} libre${nWeek > 1 ? 's' : ''} sur 7 jours`;
     else info = 'Aucun créneau libre dans ta tranche sur 30 jours';
-    return `<a class="crow" href="#club-${c.id}"><div class="t">${esc(c.name)} <span>›</span></div><small>${esc(c.city)}${kmLabel(c)}${c.courts ? `, ${c.courts} terrain${c.courts > 1 ? 's' : ''}` : ''}</small><small>${info}</small></a>`;
-  }).join('');
+    return `<div class="crow"><div class="t"><a href="#club-${c.id}">${esc(c.name)}</a>${starBtn(c)}</div><a class="sub" href="#club-${c.id}"><small>${esc(c.city)}${kmLabel(c)}${c.courts ? `, ${c.courts} terrain${c.courts > 1 ? 's' : ''}` : ''}</small><small>${info}</small></a></div>`;
+  };
+  const shown = rows.filter(r => !hiddenClubs.has(r.c.id)), masked = rows.filter(r => hiddenClubs.has(r.c.id));
+  let html = shown.map(line).join('');
+  if (masked.length) html += `<div class="section">Clubs masqués</div>` + masked.map(r => `<div class="crow masked"><div class="t"><span class="nm">${esc(r.c.name)}</span><button class="chip" data-hide="${r.c.id}">Réafficher</button></div></div>`).join('');
+  return html;
 }
 
 function renderFiche(c) {
   const a = avail[c.id];
   const href = bookingAttrs(c);
   const maps = c.lat != null ? `https://maps.apple.com/?daddr=${c.lat},${c.lng}&q=${encodeURIComponent(c.name)}` : `https://maps.apple.com/?q=${encodeURIComponent(c.address || c.name)}`;
-  let html = `<a class="back" href="#clubs">‹ Tous les clubs</a><div class="fiche"><h2>${esc(c.name)}</h2>
+  let html = `<a class="back" href="#clubs">‹ Tous les clubs</a><div class="fiche"><h2>${esc(c.name)}${starBtn(c)}</h2>
     <div class="meta">${esc(c.address || c.city)}${kmLabel(c)}${c.courts ? `, ${c.courts} terrain${c.courts > 1 ? 's' : ''}` : ''}</div>
     <div class="actions">${href ? `<a class="primary" ${dayAttrs(c, date)}>Réserver</a>` : ''}${c.phone ? `<a class="secondary" href="tel:${c.phone.replace(/\s/g, '')}">Appeler</a>` : ''}<a class="secondary" href="${maps}" target="_blank" rel="noopener">Itinéraire</a></div>
-    ${c.note ? `<div class="empty" style="margin:6px 0 4px">${esc(c.note)}</div>` : ''}</div>`;
+    ${c.note ? `<div class="empty" style="margin:6px 0 4px">${esc(c.note)}</div>` : ''}
+    <button class="hidebtn" data-hide="${c.id}">${hiddenClubs.has(c.id) ? 'Réafficher ce club dans les listes' : 'Masquer ce club des listes'}</button></div>`;
   if (!['ok', 'fictif'].includes(a.status)) {
     const why = a.status === 'adherents' ? 'Réservé aux adhérents du club.' : a.status === 'erreur' ? `Récupération impossible (${esc(a.error)}).` : 'Les créneaux de ce club ne sont pas encore consultables ici.';
     return html + `<div class="empty" style="margin-top:14px">${why} Utilise le bouton « Réserver » pour voir son planning.</div>`;
@@ -487,6 +524,18 @@ function showUpdated() {
   $('tab-clubs').onclick = () => { location.hash = 'clubs'; };
   $('tab-day').onclick = () => { history.replaceState(null, '', location.pathname + location.search); setMode('day'); };
   window.addEventListener('hashchange', route);
+  favs = new Set(store.get('favs', [])); hiddenClubs = new Set(store.get('hidden', []));
+  $('list').addEventListener('click', async e => {
+    const fav = e.target.closest('[data-fav]'), hide = e.target.closest('[data-hide]'), sh = e.target.closest('.share');
+    if (fav) { e.preventDefault(); const id = fav.dataset.fav; favs.has(id) ? favs.delete(id) : favs.add(id); store.set('favs', [...favs]); render(); }
+    else if (hide) { e.preventDefault(); const id = hide.dataset.hide; hiddenClubs.has(id) ? hiddenClubs.delete(id) : hiddenClubs.add(id); store.set('hidden', [...hiddenClubs]); if (mode === 'day') buildDays(); render(); }
+    else if (sh) {
+      e.preventDefault();
+      const text = sh.dataset.text, url = sh.dataset.url;
+      if (navigator.share) { try { await navigator.share(url ? { text, url } : { text }); } catch {} }
+      else window.open('https://wa.me/?text=' + encodeURIComponent(url ? text + '\n' + url : text), '_blank', 'noopener');
+    }
+  });
   me = store.get('me', null);
   $('geo').classList.toggle('on', !!me);
   $('geo').onclick = () => {
