@@ -229,14 +229,16 @@ function buildDays() {
   $('days').querySelector('.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
 }
 
+function telLink(c, cls = 'link') { return c.phone ? `<a class="${cls}" href="tel:${c.phone.replace(/\s/g, '')}">Appeler (${c.phone})</a>` : ''; }
+
 function bookingAttrs(c) { return c.bookingUrl ? `href="${esc(c.bookingUrl)}" target="_blank" rel="noopener"` : ''; }
 
 function clubCard(c, a) {
   const href = bookingAttrs(c);
-  const site = href ? ` <a class="link" ${href}>Site du club</a>` : '';
-  const courts = c.courts ? `${c.courts} terrain${c.courts > 1 ? 's' : ''}` : 'terrains ?';
+  const site = (href ? ` <a class="link" ${href}>Réserver sur leur site</a>` : '') + (c.phone ? ` · ${telLink(c)}` : '');
+  const courts = c.courts ? `${c.courts} terrain${c.courts > 1 ? 's' : ''}` : '';
   let body, count = '';
-  if (a.status === 'non-branche') body = `<div class="empty">Créneaux pas encore consultables ici.${site}</div>`;
+  if (a.status === 'non-branche') body = `<div class="empty">Ce club ne publie pas ses créneaux en ligne.${site}</div>`;
   else if (a.status === 'adherents') body = `<div class="empty">Réservé aux adhérents du club.${site}</div>`;
   else if (a.status === 'erreur') body = `<div class="err">Récupération impossible (${esc(a.error)}).${site}</div>`;
   else if (!a.horizon || date > a.horizon) body = `<div class="empty">Pas encore ouvert à la réservation${a.horizon ? ` (ouvert jusqu'au ${new Date(a.horizon + 'T12:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })})` : ''}.${site}</div>`;
@@ -254,7 +256,7 @@ function clubCard(c, a) {
     count = n ? `, <span class="count">${n} horaire${n > 1 ? 's' : ''} libre${n > 1 ? 's' : ''}</span>` : '';
     body = chips ? `<div class="slots">${chips}</div>` : '<div class="empty">Complet sur ces critères.</div>';
   }
-  return `<section class="club"><h2><a href="#club-${c.id}">${esc(c.name)}</a></h2><div class="meta">${esc(c.city)}${kmLabel(c)}, ${courts}${count}</div>${body}</section>`;
+  return `<section class="club"><h2><a href="#club-${c.id}">${esc(c.name)}</a></h2><div class="meta">${esc(c.city)}${kmLabel(c)}${courts ? `, ${courts}` : ''}${count}</div>${body}</section>`;
 }
 
 function renderDay() {
@@ -355,7 +357,7 @@ function renderFiche(c) {
   const maps = c.lat != null ? `https://maps.apple.com/?daddr=${c.lat},${c.lng}&q=${encodeURIComponent(c.name)}` : `https://maps.apple.com/?q=${encodeURIComponent(c.address || c.name)}`;
   let html = `<a class="back" href="#clubs">‹ Tous les clubs</a><div class="fiche"><h2>${esc(c.name)}</h2>
     <div class="meta">${esc(c.address || c.city)}${kmLabel(c)}${c.courts ? `, ${c.courts} terrain${c.courts > 1 ? 's' : ''}` : ''}</div>
-    <div class="actions">${href ? `<a class="primary" ${href}>Réserver</a>` : ''}<a class="secondary" href="${maps}" target="_blank" rel="noopener">Itinéraire</a></div>
+    <div class="actions">${href ? `<a class="primary" ${href}>Réserver</a>` : ''}${c.phone ? `<a class="secondary" href="tel:${c.phone.replace(/\s/g, '')}">Appeler</a>` : ''}<a class="secondary" href="${maps}" target="_blank" rel="noopener">Itinéraire</a></div>
     ${c.note ? `<div class="empty" style="margin:6px 0 4px">${esc(c.note)}</div>` : ''}</div>`;
   if (!['ok', 'fictif'].includes(a.status)) {
     const why = a.status === 'adherents' ? 'Réservé aux adhérents du club.' : a.status === 'erreur' ? `Récupération impossible (${esc(a.error)}).` : 'Les créneaux de ce club ne sont pas encore consultables ici.';

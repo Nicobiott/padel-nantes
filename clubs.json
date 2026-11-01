@@ -11,7 +11,8 @@
     "platformId": "carquefou",
     "confidence": "probable",
     "note": "Créneaux visibles uniquement avec un compte MyUrban, site protégé contre les robots.",
-    "bookingUrl": "https://myurban.fr/padel/reserver/"
+    "bookingUrl": "https://myurban.fr/padel/reserver/",
+    "phone": "02 52 20 32 60"
   },
   {
     "id": "le-sporting",
@@ -42,7 +43,8 @@
     "platformId": "le-set-le-bignon",
     "confidence": "confirmé",
     "note": "Peut-être aussi sur Playtomic (à vérifier).",
-    "bookingUrl": "https://www.anybuddyapp.com/fr/club/le-set-le-bignon/padel"
+    "bookingUrl": "https://www.anybuddyapp.com/fr/club/le-set-le-bignon/padel",
+    "phone": "02 59 10 10 01"
   },
   {
     "id": "ucpa-nantes",
@@ -109,8 +111,9 @@
     "platform": "tenup",
     "platformId": "61440095",
     "confidence": "confirmé",
-    "note": "Ten'Up, club FFT n°61440095. L'API Ten'Up est protégée contre les robots : pas branchable automatiquement.",
-    "bookingUrl": "https://tenup.fft.fr/club/61440095"
+    "note": "Réservation dans l'app Ten'Up (location horaire padel), ou par téléphone.",
+    "bookingUrl": "https://tenup.fft.fr/club/61440095",
+    "phone": "02 51 79 17 10"
   },
   {
     "id": "smash-goal",
@@ -168,7 +171,8 @@
     "confidence": "confirmé",
     "always": true,
     "note": "6 terrains intérieurs et 2 extérieurs. Créneaux visibles uniquement dans l'app « La Pala » (Gestion Sports), avec un compte.",
-    "bookingUrl": "https://la-pala.fr/padel-location-terrains/"
+    "bookingUrl": "https://la-pala.fr/padel-location-terrains/",
+    "phone": "02 41 93 18 57"
   },
   {
     "id": "la-cancha",
@@ -183,7 +187,8 @@
     "confidence": "confirmé",
     "always": true,
     "note": "4 terrains intérieurs. Créneaux visibles uniquement après connexion sur lacancha.mymobileapp.fr.",
-    "bookingUrl": "https://lacancha.mymobileapp.fr"
+    "bookingUrl": "https://lacancha.mymobileapp.fr",
+    "phone": "06 16 11 97 71"
   },
   {
     "id": "autre-usine",
@@ -201,7 +206,8 @@
     "confidence": "confirmé",
     "always": true,
     "note": "Padel en sessions de 1h30, réservation publique via Apex Timing. L'app affiche les horaires libres, pas le nombre de terrains.",
-    "bookingUrl": "https://www.apex-timing.com/gokarts/session_booking.php?center=66&id=1277"
+    "bookingUrl": "https://www.apex-timing.com/gokarts/session_booking.php?center=66&id=1277",
+    "phone": "02 41 30 03 00"
   },
   {
     "id": "espark-23",
@@ -216,6 +222,7 @@
     "confidence": "confirmé",
     "always": true,
     "note": "2 terrains intérieurs. Le padel n'est pas proposé dans la réservation en ligne du parc (Apex Timing) : réservation auprès du club.",
-    "bookingUrl": "https://www.espark-23.fr/reservation/"
+    "bookingUrl": "https://www.espark-23.fr/reservation/",
+    "phone": "02 40 09 97 03"
   }
 ]
