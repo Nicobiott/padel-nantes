@@ -1,0 +1,9 @@
+name: probe
+on: { push: { branches: [probe3] } }
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for n in vertou ligue "pays de la loire" "loire"; do echo "-- doinsport $n"; curl -s -G -H 'Accept: application/json' --data-urlencode "name=$n" https://api-v3.doinsport.club/clubs | jq -r '.[]? | "\(.id) \(.name) \(.city // "") \(.address // "")"' | head -8; done
+          echo "-- playtomic near Vertou"; curl -s "https://api.playtomic.io/v1/tenants?coordinate=47.169,-1.47&radius=15000&sport_id=PADEL&size=40" | jq -r '.[]? | "\(.tenant_id) \(.tenant_name) | \(.address.city // "")"' | head -40
