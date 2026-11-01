@@ -227,12 +227,15 @@
     "lat": 47.379,
     "lng": -1.194,
     "courts": 2,
-    "platform": "espark",
-    "platformId": null,
+    "platform": "doinsport",
+    "platformId": {
+      "clubId": "56585968-6b5f-4f49-bdd2-9b33ca206064",
+      "activityId": "ce8c306e-224a-4f24-aa9d-6500580924dc"
+    },
     "confidence": "confirmé",
     "always": true,
-    "note": "2 terrains intérieurs. Le padel n'est pas proposé dans la réservation en ligne du parc (Apex Timing) : réservation auprès du club.",
-    "bookingUrl": "https://www.espark-23.fr/reservation/",
+    "note": "2 terrains intérieurs. Réservation en ligne sur Doinsport (padel-espark23.doinsport.club).",
+    "bookingUrl": "https://padel-espark23.doinsport.club/select-booking?guid=%2256585968-6b5f-4f49-bdd2-9b33ca206064%22&from=sport&activitySelectedId=%22ce8c306e-224a-4f24-aa9d-6500580924dc%22",
     "phone": "02 40 09 97 03"
   }
 ]
