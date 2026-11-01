@@ -1,0 +1,18 @@
+name: probe
+on: { push: { branches: [probe] } }
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          UA="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"
+          echo "=== ANYBUDDY"; curl -sL -A "$UA" https://www.anybuddyapp.com/fr/club/le-set-le-bignon/padel -o ab.html; wc -c ab.html
+          grep -oE 'href="[^"]*"' ab.html | sort -u | head -60
+          grep -oE '[^"]{0,80}(date|Date)=[^"]{0,80}' ab.html | sort -u | head -30
+          for js in $(grep -oE '/_next/static/[^"]+\.js' ab.html | sort -u); do curl -sL "https://www.anybuddyapp.com$js" | grep -oE '.{0,120}(searchParams|query)\.(get\()?["'"'"']?(date|day|startDate)["'"'"']?.{0,120}' | head -5; done
+          echo "=== CANCHA"; curl -sL -A "$UA" https://lacancha.mymobileapp.fr/ -o mc.html; wc -c mc.html
+          grep -oiE '(href|action|src)="[^"]*"' mc.html | sort -u | head -60
+          grep -oiE '.{0,100}(calendrier|reserv|myDate).{0,100}' mc.html | sort -u | head -30
+          echo "=== APEX"; curl -sL -A "$UA" "https://www.apex-timing.com/gokarts/session_booking.php?center=66&id=1277" -o ax.html; wc -c ax.html
+          grep -oiE '.{0,100}(\$_GET|getParam|location\.search|URLSearchParams|[?&]date=|selected_date|load_schedules).{0,150}' ax.html | sort -u | head -30
+          grep -oE 'src="[^"]*\.js[^"]*"' ax.html | head
