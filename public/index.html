@@ -50,7 +50,8 @@
   .presets::-webkit-scrollbar, .days::-webkit-scrollbar { display:none; }
   .presets .chip { background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.28); }
   .presets .chip.on { background:var(--ball); color:#0D1B33; border-color:var(--ball); font-weight:700; }
-  .range { display:flex; align-items:center; gap:6px; margin-top:10px; font-size:14px; color:rgba(255,255,255,.85); }
+  .presets .chip { flex:1; text-align:center; justify-content:center; padding:9px 6px; font-size:15px; }
+  .range { display:none; align-items:center; gap:6px; margin-top:10px; font-size:14px; color:rgba(255,255,255,.85); }
   .range select { background:transparent; color:#fff; border:1px solid rgba(255,255,255,.35); border-radius:9px; padding:6px 8px; font-size:15px; }
   .range select option { color:#0D1B33; }
 
@@ -208,7 +209,7 @@ function filtered(a, d) {
   return a.slots.filter(s => {
     if (!s.start.startsWith(d) || (du && s.duration !== du)) return false;
     const t = toMin(s.start.slice(11, 16));
-    return t >= from && t + s.duration <= to; // la partie tient entièrement dans la plage
+    return t >= from && t < to; // la partie commence dans la tranche
   });
 }
 
@@ -286,7 +287,7 @@ function renderDay() {
   const notOpen = live.length && live.every(x => !x.a.horizon || date > x.a.horizon);
   let html = `<div class="summary">${notOpen ? `Le ${fmtShort.format(new Date(date + 'T12:00')).replace('.', '')} n'est pas encore ouvert à la réservation dans ces clubs.`
     : nTimes ? `<b>${nTimes} créneau${nTimes > 1 ? 'x' : ''} libre${nTimes > 1 ? 's' : ''}</b> dans <b>${nClubs} club${nClubs > 1 ? 's' : ''}</b> le ${fmtLong.format(new Date(date + 'T12:00'))}, entre ${tr}.`
-    : `Aucun créneau libre le ${fmtLong.format(new Date(date + 'T12:00'))} entre ${tr}. Essaie une autre tranche ou l'onglet Recherche.`}</div>`;
+    : `Aucun créneau libre le ${fmtLong.format(new Date(date + 'T12:00'))} entre ${tr}. Essaie une autre tranche ou un autre jour.`}</div>`;
   html += live.map(x => clubCard(x.c, x.a)).join('');
   if (other.length) html += `<div class="section">Autres clubs</div>` + other.map(x => clubCard(x.c, x.a)).join('');
   return html;
@@ -447,9 +448,11 @@ function showUpdated() {
   $('to').value = q.get('a') || prefs.to || '22';
   if (!$('from').value) $('from').value = '7';
   if (!$('to').value) $('to').value = '24';
-  const presets = [['Toute la journée', 7, 24], ['Matin', 9, 12], ['Midi', 12, 14], ['Après-midi', 14, 18], ['Soir', 18, 22], ['Fin de soirée', 20, 24]];
+  const presets = [['9h–13h', 9, 13], ['13h–18h', 13, 18], ['18h–22h', 18, 22]];
+  // Une plage enregistrée qui ne correspond plus à une tranche : retour au soir
+  if (!presets.some(([, f, t]) => String(f) === $('from').value && String(t) === $('to').value)) { $('from').value = '18'; $('to').value = '22'; }
   const markPreset = () => { $('presets').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.f === $('from').value && b.dataset.t === $('to').value)); const on = $('presets').querySelector('.on'); if (on) $('presets').scrollLeft = on.offsetLeft - 14; };
-  $('presets').innerHTML = presets.map(([l, f, t]) => `<button class="chip" data-f="${f}" data-t="${t}">${l}${f === 7 && t === 24 ? '' : ` ${f}h–${t === 24 ? '0h' : t + 'h'}`}</button>`).join('');
+  $('presets').innerHTML = presets.map(([l, f, t]) => `<button class="chip" data-f="${f}" data-t="${t}">${l}</button>`).join('');
   $('presets').querySelectorAll('button').forEach(b => b.onclick = () => { $('from').value = b.dataset.f; $('to').value = b.dataset.t; markPreset(); if (mode === 'day') buildDays(); render(); });
   markPreset();
   [...new Set(data.clubs.map(c => c.city))].sort().forEach(c => $('city').insertAdjacentHTML('beforeend', `<option>${esc(c)}</option>`));
