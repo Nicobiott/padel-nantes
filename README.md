@@ -20,7 +20,7 @@ Toutes les 30 minutes, la tâche compare les créneaux à ceux de la fois préc�
 1. Installe l'app gratuite **ntfy** sur l'iPhone (App Store), sans créer de compte.
 2. Dans ntfy, abonne-toi à un nom de canal difficile à deviner, par exemple `padel-nantes-` suivi de quelques lettres et chiffres au hasard. Ce nom fait office de mot de passe : toute personne qui le connaît peut lire tes alertes.
 3. Sur GitHub, dans le dépôt : **Settings › Secrets and variables › Actions › New repository secret**. Nom : `NTFY_TOPIC`, valeur : le nom du canal.
-4. Modifie `watches.json` (crayon ✏️ sur la page du fichier dans GitHub) pour décrire ce que tu cherches. Dans l'app, l'onglet **Recherche** génère le bloc prêt à copier.
+4. Modifie `watches.json` (crayon ✏️ sur la page du fichier dans GitHub) pour décrire ce que tu cherches.
 
 Format d'une veille :
 ```json

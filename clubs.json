@@ -44,7 +44,8 @@
     "confidence": "confirmé",
     "note": "Peut-être aussi sur Playtomic (à vérifier).",
     "bookingUrl": "https://www.anybuddyapp.com/fr/club/le-set-le-bignon/padel",
-    "phone": "02 59 10 10 01"
+    "phone": "02 59 10 10 01",
+    "slotUrl": "https://www.anybuddyapp.com/fr/club/le-set-le-bignon/pre-reservation?activity=padel&date={date}&time={time}"
   },
   {
     "id": "ucpa-nantes",
@@ -71,7 +72,8 @@
     "platform": "anybuddy",
     "platformId": "hangar-24-nantes",
     "confidence": "confirmé",
-    "bookingUrl": "https://www.anybuddyapp.com/fr/club/hangar-24-nantes"
+    "bookingUrl": "https://www.anybuddyapp.com/fr/club/hangar-24-nantes",
+    "slotUrl": "https://www.anybuddyapp.com/fr/club/hangar-24-nantes/pre-reservation?activity=padel&date={date}&time={time}"
   },
   {
     "id": "vertonne",

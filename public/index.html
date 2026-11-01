@@ -231,6 +231,11 @@ function buildDays() {
 
 function telLink(c, cls = 'link') { return c.phone ? `<a class="${cls}" href="tel:${c.phone.replace(/\s/g, '')}">Appeler (${c.phone})</a>` : ''; }
 
+// Lien d'un créneau : page de réservation pré-remplie (date + heure) quand le club le permet, sinon sa page de réservation
+function slotAttrs(c, start) {
+  const u = c.slotUrl ? c.slotUrl.replace('{date}', start.slice(0, 10)).replace('{time}', encodeURIComponent(start.slice(11, 16))) : c.bookingUrl;
+  return u ? `href="${esc(u)}" target="_blank" rel="noopener"` : '';
+}
 function bookingAttrs(c) { return c.bookingUrl ? `href="${esc(c.bookingUrl)}" target="_blank" rel="noopener"` : ''; }
 
 function clubCard(c, a) {
@@ -250,7 +255,7 @@ function clubCard(c, a) {
       const prices = ss.map(s => s.price).filter(p => p != null);
       const durations = [...new Set(ss.map(s => s.duration))].sort((x, y) => x - y).map(dur).join('/');
       const sub = [nCourts ? `${nCourts} terr., ${durations}` : durations, prices.length ? `dès ${Math.min(...prices)} €` : ''].filter(Boolean).join(', ');
-      return `<a class="slot" ${href}><b>${t}</b><small>${sub}</small></a>`;
+      return `<a class="slot" ${slotAttrs(c, ss[0].start)}><b>${t}</b><small>${sub}</small></a>`;
     }).join('');
     const n = Object.keys(groups).length;
     count = n ? `, <span class="count">${n} horaire${n > 1 ? 's' : ''} libre${n > 1 ? 's' : ''}</span>` : '';
@@ -300,15 +305,9 @@ function renderSearch() {
     const d = r.start.slice(0, 10);
     if (d !== last) { { const t = fmt.format(new Date(d + 'T12:00')); html += `<div class="dhead">${t[0].toUpperCase() + t.slice(1)}</div>`; } last = d; }
     const p = r.prices.length ? `, dès ${Math.min(...r.prices)} €` : '';
-    html += `<a class="row" ${bookingAttrs(r.c)}><b>${r.start.slice(11, 16)}</b><span class="c">${esc(r.c.name)}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${[...r.durations].sort((a, b) => a - b).map(dur).join('/')}${p}</small></span>›</a>`;
+    html += `<a class="row" ${slotAttrs(r.c, r.start)}><b>${r.start.slice(11, 16)}</b><span class="c">${esc(r.c.name)}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${[...r.durations].sort((a, b) => a - b).map(dur).join('/')}${p}</small></span>›</a>`;
   }
   if (rows.length > 60) html += `<div class="empty">… et ${rows.length - 60} autres créneaux.</div>`;
-  // Veille prête à copier dans watches.json
-  const city = $('city').value;
-  const watch = { name: 'Ma recherche', days: [...wdays].sort(), from: `${String($('from').value).padStart(2, '0')}:00`, to: `${String($('to').value).padStart(2, '0')}:00` };
-  if (+$('dur').value) watch.duration = +$('dur').value;
-  if (city) watch.clubs = data.clubs.filter(c => c.city === city).map(c => c.id);
-  html += `<div class="alertbox">🔔 <b>Être prévenu</b> dès qu'un créneau de cette recherche se libère : ajoute ce bloc dans <code>watches.json</code> (voir le README).<pre id="watch">${esc(JSON.stringify(watch))}</pre><button class="chip" id="copy">Copier</button></div>`;
   return html;
 }
 
@@ -323,7 +322,7 @@ function chipsFor(c, ss) {
     const prices = g.map(s => s.price).filter(p => p != null);
     const durations = [...new Set(g.map(s => s.duration))].sort((x, y) => x - y).map(dur).join('/');
     const sub = [nCourts ? `${nCourts} terr., ${durations}` : durations, prices.length ? `dès ${Math.min(...prices)} €` : ''].filter(Boolean).join(', ');
-    return `<a class="slot" ${href}><b>${t}</b><small>${sub}</small></a>`;
+    return `<a class="slot" ${slotAttrs(c, g[0].start)}><b>${t}</b><small>${sub}</small></a>`;
   }).join('');
 }
 
@@ -383,7 +382,6 @@ function render() {
   const fiche = mode === 'clubs' && detail && data.clubs.find(c => c.id === detail);
   html += mode === 'day' ? renderDay() : mode === 'search' ? renderSearch() : fiche ? renderFiche(fiche) : renderClubs();
   $('list').innerHTML = html;
-  $('copy')?.addEventListener('click', e => { navigator.clipboard?.writeText($('watch').textContent).then(() => e.target.textContent = 'Copié ✓', () => {}); });
   store.set('prefs', { mode, from: $('from').value, to: $('to').value, dur: $('dur').value, city: $('city').value, wdays: [...wdays] });
 }
 
