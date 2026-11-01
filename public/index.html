@@ -145,6 +145,28 @@
   @keyframes sl { from { transform:translateX(28px); opacity:.4; } to { transform:none; opacity:1; } }
   @keyframes sr { from { transform:translateX(-28px); opacity:.4; } to { transform:none; opacity:1; } }
 
+  /* Badges, jours fermés, vue compacte */
+  .badge { display:inline-grid; place-items:center; flex:0 0 auto; width:30px; height:30px; border-radius:50%; margin-right:9px; vertical-align:middle;
+    font-size:12px; font-weight:800; letter-spacing:.02em; color:var(--gold-hi); background:hsl(var(--h) 45% 24%); box-shadow:inset 0 0 0 1.5px rgba(217,180,90,.75), 0 0 8px rgba(217,180,90,.15); font-stretch:85%; }
+  .badge.sm { font-size:10.5px; }
+  .club h2, .crow .t, .fiche h2 { display:flex; align-items:center; }
+  .fiche h2 .badge { width:38px; height:38px; font-size:14px; }
+  .row .c .badge { width:22px; height:22px; font-size:9px; margin-right:6px; vertical-align:-5px; }
+  .row .c .badge.sm { font-size:8px; }
+  .day.closed { opacity:.42; } .day.closed .n { color:var(--muted); font-weight:500; }
+  .ccard { padding:12px 0; border-top:1px solid var(--line); }
+  .summary + .ccard, .banner + .summary + .ccard { border-top:0; }
+  .ccard .ch { display:flex; align-items:center; gap:0; margin-bottom:8px; }
+  .ccard .ch a { color:var(--ink); text-decoration:none; font-weight:700; font-size:17px; font-stretch:88%; }
+  .ccard.fav .ch a { color:var(--gold-hi); }
+  .ccard .cm { color:var(--muted); font-size:12.5px; margin-left:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; }
+  .ccard .star { margin-left:auto; }
+  .minis { display:flex; flex-wrap:wrap; gap:6px; }
+  .mini { display:inline-flex; align-items:baseline; gap:5px; text-decoration:none; color:#fff; background:linear-gradient(180deg, #11254A, #0E1F3E); border:1px solid var(--line); border-radius:10px; padding:5px 9px; }
+  .mini b { font-size:15px; font-variant-numeric:tabular-nums; } .mini small { font-size:11px; color:var(--gold); }
+  .mini:active { border-color:var(--gold); transform:scale(.96); }
+  .cempty { color:var(--muted); font-size:13px; }
+
   /* Favoris, partage */
   .star { border:0; background:none; color:var(--muted); font-size:20px; line-height:1; padding:4px 6px; margin-left:4px; cursor:pointer; vertical-align:2px; }
   .star.on { color:var(--gold); text-shadow:0 0 10px rgba(217,180,90,.55); }
@@ -219,6 +241,7 @@
     <select id="dur" aria-label="Durée"><option value="0">Toutes durées</option><option value="60">1h</option><option value="90">1h30</option><option value="120">2h</option></select>
     <select id="city" aria-label="Ville"><option value="">Toutes les villes</option></select>
     <button class="chip" id="geo">Près de moi</button>
+    <button class="chip" id="compact">Vue compacte</button>
   </div>
 </div>
 <nav class="tabbar" aria-label="Vues">
@@ -259,6 +282,12 @@ const favFirst = (x, y) => (isFav(y.c || y) - isFav(x.c || x));
 function visibleClubs(includeHidden = false) {
   const city = $('city').value;
   return data.clubs.filter(c => (!city || c.city === city) && (includeHidden || !hiddenClubs.has(c.id)));
+}
+// Badge rond aux initiales du club (teinte propre à chaque club)
+function badge(c) {
+  const t = c.short || c.name.replace(/^(le|la|l')\s*/i, '').split(/\s+/).map(w => w[0]).join('').slice(0, 3).toUpperCase();
+  let h = 0; for (const ch of c.id) h = (h * 31 + ch.charCodeAt(0)) % 360;
+  return `<span class="badge${t.length > 2 ? ' sm' : ''}" style="--h:${h}" aria-hidden="true">${esc(t)}</span>`;
 }
 function starBtn(c) { return `<button class="star${isFav(c) ? ' on' : ''}" data-fav="${c.id}" aria-label="${isFav(c) ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${isFav(c) ? '★' : '☆'}</button>`; }
 
@@ -307,7 +336,9 @@ function buildDays() {
   $('days').innerHTML = data.days.map(d => {
     const dt = new Date(d + 'T12:00');
     const n = visibleClubs().reduce((sum, c) => sum + new Set(filtered(avail[c.id], d).map(s => s.start.slice(11, 16))).size, 0);
-    return `<button class="day${d === date ? ' on' : ''}" data-d="${d}"><span class="wd">${wd.format(dt).replace('.', '')}</span><span class="dn">${dt.getDate()}</span><span class="n">${n ? n + ' libres' : ''}</span></button>`;
+    // Jour ouvert à la réservation dans au moins un club ?
+    const open = visibleClubs().some(c => avail[c.id]?.horizon && d <= avail[c.id].horizon);
+    return `<button class="day${d === date ? ' on' : ''}${open ? '' : ' closed'}" data-d="${d}"><span class="wd">${wd.format(dt).replace('.', '')}</span><span class="dn">${dt.getDate()}</span><span class="n">${!open ? 'pas ouvert' : n ? n + ' libres' : 'complet'}</span></button>`;
   }).join('');
   $('days').querySelectorAll('.day').forEach(b => b.onclick = () => setDate(b.dataset.d));
   $('days').querySelector('.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
@@ -344,7 +375,23 @@ function clubCard(c, a) {
     count = n ? `, <span class="count">${n} horaire${n > 1 ? 's' : ''} libre${n > 1 ? 's' : ''}</span>` : '';
     body = chips ? `<div class="slots">${chips}</div>` : '<div class="empty">Complet sur ces critères.</div>';
   }
-  return `<section class="club${isFav(c) ? ' fav' : ''}"><h2><a href="#club-${c.id}">${esc(c.name)}</a>${starBtn(c)}</h2><div class="meta">${esc(c.city)}${kmLabel(c)}${courts ? `, ${courts}` : ''}${count}</div>${body}</section>`;
+  return `<section class="club${isFav(c) ? ' fav' : ''}"><h2>${badge(c)}<a href="#club-${c.id}">${esc(c.name)}</a>${starBtn(c)}</h2><div class="meta">${esc(c.city)}${kmLabel(c)}${courts ? `, ${courts}` : ''}${count}</div>${body}</section>`;
+}
+
+let compact = false;
+// Vue compacte : une ligne par club, horaires en petites pastilles
+function compactCard(c, a) {
+  let body;
+  if (!a.horizon || date > a.horizon) body = '<span class="cempty">pas encore ouvert</span>';
+  else {
+    const groups = {};
+    filtered(a, date).forEach(s => (groups[s.start.slice(11, 16)] ||= []).push(s));
+    body = Object.entries(groups).map(([t, g]) => {
+      const pr = g.map(s => s.price).filter(p => p != null);
+      return `<a class="mini" ${slotAttrs(c, g[0].start)}><b>${t}</b>${pr.length ? `<small>${perPlayer(Math.min(...pr))}</small>` : ''}</a>`;
+    }).join('') || '<span class="cempty">complet</span>';
+  }
+  return `<div class="ccard${isFav(c) ? ' fav' : ''}"><div class="ch">${badge(c)}<a href="#club-${c.id}">${esc(c.name)}</a><span class="cm">${esc(c.city)}${kmLabel(c)}</span>${starBtn(c)}</div><div class="minis">${body}</div></div>`;
 }
 
 function renderDay() {
@@ -362,7 +409,7 @@ function renderDay() {
   let html = `<div class="summary">${notOpen ? `Le ${fmtShort.format(new Date(date + 'T12:00')).replace('.', '')} n'est pas encore ouvert à la réservation dans ces clubs.`
     : nTimes ? `<b>${nTimes} créneau${nTimes > 1 ? 'x' : ''} libre${nTimes > 1 ? 's' : ''}</b> dans <b>${nClubs} club${nClubs > 1 ? 's' : ''}</b> le ${fmtLong.format(new Date(date + 'T12:00'))}, entre ${tr}.`
     : `Aucun créneau libre le ${fmtLong.format(new Date(date + 'T12:00'))} entre ${tr}. Essaie une autre tranche ou un autre jour.`}</div>`;
-  html += live.map(x => clubCard(x.c, x.a)).join('');
+  html += live.map(x => (compact ? compactCard : clubCard)(x.c, x.a)).join('');
   if (other.length) html += `<div class="section">Autres clubs</div>` + other.map(x => clubCard(x.c, x.a)).join('');
   return html;
 }
@@ -395,7 +442,7 @@ function renderSearch() {
     }
     const p = r.prices.length ? `, ${perPlayer(Math.min(...r.prices))}/joueur` : '';
     const durs = [...r.durations].sort((a, b) => a - b).map(dur).join('/');
-    html += `<div class="roww"><a class="row" ${slotAttrs(r.c, r.start)}><b>${r.start.slice(11, 16)}</b><span class="c">${isFav(r.c) ? '<i class="fs">★</i> ' : ''}${esc(r.c.name)}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${durs}${p}</small></span></a>${shareBtn(r.c, r.start, durs, r.prices)}</div>`;
+    html += `<div class="roww"><a class="row" ${slotAttrs(r.c, r.start)}><b>${r.start.slice(11, 16)}</b><span class="c">${badge(r.c)}${isFav(r.c) ? '<i class="fs">★</i> ' : ''}${esc(r.c.name)}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${durs}${p}</small></span></a>${shareBtn(r.c, r.start, durs, r.prices)}</div>`;
   }
   if (rows.length > 60) html += `<div class="empty">… et ${rows.length - 60} autres créneaux.</div>`;
   return html;
@@ -430,7 +477,7 @@ function renderClubs() {
     if (!live) info = a.status === 'adherents' ? 'Réservé aux adhérents' : a.status === 'erreur' ? 'Récupération impossible pour le moment' : 'Créneaux pas encore consultables ici';
     else if (next) info = `<span class="next">Prochain : ${fmtShort.format(new Date(next.start.slice(0, 10) + 'T12:00')).replace('.', '')} à ${next.start.slice(11, 16)}</span>, ${nWeek} horaire${nWeek > 1 ? 's' : ''} libre${nWeek > 1 ? 's' : ''} sur 7 jours`;
     else info = 'Aucun créneau libre dans ta tranche sur 60 jours';
-    return `<div class="crow"><div class="t"><a href="#club-${c.id}">${esc(c.name)}</a>${starBtn(c)}</div><a class="sub" href="#club-${c.id}"><small>${esc(c.city)}${kmLabel(c)}${c.courts ? `, ${c.courts} terrain${c.courts > 1 ? 's' : ''}` : ''}</small><small>${info}</small></a></div>`;
+    return `<div class="crow"><div class="t">${badge(c)}<a href="#club-${c.id}">${esc(c.name)}</a>${starBtn(c)}</div><a class="sub" href="#club-${c.id}"><small>${esc(c.city)}${kmLabel(c)}${c.courts ? `, ${c.courts} terrain${c.courts > 1 ? 's' : ''}` : ''}</small><small>${info}</small></a></div>`;
   };
   const shown = rows.filter(r => !hiddenClubs.has(r.c.id)), masked = rows.filter(r => hiddenClubs.has(r.c.id));
   let html = shown.map(line).join('');
@@ -442,7 +489,7 @@ function renderFiche(c) {
   const a = avail[c.id];
   const href = bookingAttrs(c);
   const maps = c.lat != null ? `https://maps.apple.com/?daddr=${c.lat},${c.lng}&q=${encodeURIComponent(c.name)}` : `https://maps.apple.com/?q=${encodeURIComponent(c.address || c.name)}`;
-  let html = `<a class="back" href="#clubs">‹ Tous les clubs</a><div class="fiche"><h2>${esc(c.name)}${starBtn(c)}</h2>
+  let html = `<a class="back" href="#clubs">‹ Tous les clubs</a><div class="fiche"><h2>${badge(c)}${esc(c.name)}${starBtn(c)}</h2>
     <div class="meta">${esc(c.address || c.city)}${kmLabel(c)}${c.courts ? `, ${c.courts} terrain${c.courts > 1 ? 's' : ''}` : ''}</div>
     <div class="actions">${href ? `<a class="primary" ${dayAttrs(c, date)}>Réserver</a>` : ''}${c.phone ? `<a class="secondary" href="tel:${c.phone.replace(/\s/g, '')}">Appeler</a>` : ''}<a class="secondary" href="${maps}" target="_blank" rel="noopener">Itinéraire</a></div>
     ${c.note ? `<div class="empty" style="margin:6px 0 4px">${esc(c.note)}</div>` : ''}
@@ -483,6 +530,7 @@ function setMode(m) {
   $('days').classList.toggle('hidden', m !== 'day');
   $('when').classList.toggle('hidden', m !== 'day');
   $('wdays').classList.toggle('hidden', m !== 'search');
+  $('compact').classList.toggle('hidden', m !== 'day');
   if (m === 'day') buildDays();
   render();
   window.scrollTo(0, 0);
@@ -552,6 +600,9 @@ function showUpdated() {
     setDate(data.days[i]);
     const l = $('list'); l.classList.remove('swipe-l', 'swipe-r'); void l.offsetWidth; l.classList.add(dx < 0 ? 'swipe-l' : 'swipe-r');
   }, { passive: true });
+  compact = store.get('compact', false);
+  $('compact').classList.toggle('on', compact);
+  $('compact').onclick = () => { compact = !compact; store.set('compact', compact); $('compact').classList.toggle('on', compact); render(); };
   favs = new Set(store.get('favs', [])); hiddenClubs = new Set(store.get('hidden', []));
   $('list').addEventListener('click', async e => {
     const fav = e.target.closest('[data-fav]'), hide = e.target.closest('[data-hide]'), sh = e.target.closest('.share');

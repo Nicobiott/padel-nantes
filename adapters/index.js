@@ -14,3 +14,5 @@ module.exports = function getAdapter(platform) {
   if (process.env.MOCK === '1') return mock;
   return adapters[platform] || null; // null = plateforme pas encore branchée
 };
+// Club consultable en direct : plateforme branchée + identifiants renseignés
+module.exports.isConnected = (club) => !!adapters[club.platform] && !!club.platformId && !club.membersOnly;

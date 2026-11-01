@@ -8,7 +8,10 @@ const getAdapter = require('./adapters');
 const DAYS = 60;
 // Seuls les clubs d'au moins MIN_COURTS terrains sont affichés (nombre inconnu = exclu). Mettre 0 pour tout voir.
 const MIN_COURTS = 4;
-const clubs = JSON.parse(fs.readFileSync(path.join(__dirname, 'clubs.json'), 'utf8')).filter((c) => c.always || (c.courts || 0) >= MIN_COURTS); // "always": club gardé quel que soit son nombre de terrains
+// "always" : club gardé quel que soit son nombre de terrains. Seuls les clubs dont on lit le planning en direct sont affichés.
+const clubs = JSON.parse(fs.readFileSync(path.join(__dirname, 'clubs.json'), 'utf8'))
+  .filter((c) => c.always || (c.courts || 0) >= MIN_COURTS)
+  .filter(getAdapter.isConnected);
 
 function nextDays(n) {
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date());
