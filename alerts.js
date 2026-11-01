@@ -11,8 +11,13 @@ function weekday(date) {
   return d === 0 ? 7 : d;
 }
 
-function matches(watch, clubId, slot) {
+function matches(watch, clubId, slot, now = new Date()) {
   const date = slot.start.slice(0, 10);
+  // withinDays : seulement les créneaux des N prochains jours (ignore les nouveaux jours ouverts loin devant)
+  if (watch.withinDays) {
+    const limit = new Date(now.getTime() + watch.withinDays * 86400000).toISOString().slice(0, 10);
+    if (date > limit) return false;
+  }
   const t = toMin(slot.start.slice(11, 16));
   if (watch.clubs && watch.clubs.length && !watch.clubs.includes(clubId)) return false;
   if (watch.dates && watch.dates.length && !watch.dates.includes(date)) return false;
@@ -42,7 +47,7 @@ function findNewMatches(prev, next, watches, now = new Date()) {
       if (prevOk.get(a.id)?.status !== 'ok') continue;
       for (const s of a.slots) {
         if (s.start <= nowParis) continue;
-        if (!known.has(key(a.id, s)) && matches(watch, a.id, s)) hits.push({ clubId: a.id, ...s });
+        if (!known.has(key(a.id, s)) && matches(watch, a.id, s, now)) hits.push({ clubId: a.id, ...s });
       }
     }
     // Un seul signalement par club et par horaire (plusieurs terrains ou durées = une ligne)

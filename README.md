@@ -27,6 +27,7 @@ Format d'une veille :
 { "name": "Mardi ou jeudi soir", "days": [2, 4], "from": "18:00", "to": "21:00", "duration": 90, "clubs": [] }
 ```
 - `days` : 1 = lundi … 7 = dimanche (vide = tous les jours). On peut aussi viser des dates précises : `"dates": ["2026-11-14"]`.
+- `withinDays` : ne prévient que pour les créneaux des N prochains jours (ex. 7). Évite d'être notifié chaque fois qu'un club ouvre un nouveau jour loin devant.
 - `from` / `to` : ta plage de disponibilité. La partie doit commencer après `from` et se terminer avant `to`.
 - `duration` : 60, 90 ou 120 minutes (absent = toutes).
 - `clubs` : identifiants des clubs (voir `clubs.json`) ; vide = tous.

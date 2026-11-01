@@ -71,3 +71,11 @@ test('la partie doit se terminer avant la fin de la plage', () => {
   const r = findNewMatches(data({ a: [] }), data({ a: [slot('2026-11-03T18:00', 120), slot('2026-11-03T18:30', 120), slot('2026-11-03T19:00', 60)] }), [soir], NOW);
   assert.deepStrictEqual(r[0].hits.map((h) => h.start), ['2026-11-03T18:00', '2026-11-03T19:00']);
 });
+
+test('withinDays ignore les créneaux trop loin', () => {
+  const { matches } = require('../alerts');
+  const now = new Date('2026-11-01T12:00:00Z');
+  const w = { withinDays: 7 };
+  assert.equal(matches(w, 'x', { start: '2026-11-05T18:00', duration: 90 }, now), true);
+  assert.equal(matches(w, 'x', { start: '2026-11-20T18:00', duration: 90 }, now), false);
+});
