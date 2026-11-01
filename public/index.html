@@ -441,13 +441,13 @@ function showUpdated() {
   const prefs = store.get('prefs', {});
   $('from').innerHTML = Array.from({ length: 17 }, (_, i) => i + 7).map(h => `<option value="${h}">${h}h</option>`).join('');
   $('to').innerHTML = Array.from({ length: 16 }, (_, i) => i + 9).map(h => `<option value="${h}">${h === 24 ? 'minuit' : h + 'h'}</option>`).join('');
-  // Plage : lien partagé (?de=18&a=21) > dernière plage utilisée > toute la journée
+  // Plage : lien partagé (?de=18&a=22) > dernière plage utilisée > soirée 18h–22h
   const q = new URLSearchParams(location.search);
-  $('from').value = q.get('de') || prefs.from || '7';
-  $('to').value = q.get('a') || prefs.to || '24';
+  $('from').value = q.get('de') || prefs.from || '18';
+  $('to').value = q.get('a') || prefs.to || '22';
   if (!$('from').value) $('from').value = '7';
   if (!$('to').value) $('to').value = '24';
-  const presets = [['Toute la journée', 7, 24], ['Matin', 9, 12], ['Midi', 12, 14], ['Après-midi', 14, 18], ['Soir', 18, 21], ['Fin de soirée', 20, 24]];
+  const presets = [['Toute la journée', 7, 24], ['Matin', 9, 12], ['Midi', 12, 14], ['Après-midi', 14, 18], ['Soir', 18, 22], ['Fin de soirée', 20, 24]];
   const markPreset = () => { $('presets').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.f === $('from').value && b.dataset.t === $('to').value)); const on = $('presets').querySelector('.on'); if (on) $('presets').scrollLeft = on.offsetLeft - 14; };
   $('presets').innerHTML = presets.map(([l, f, t]) => `<button class="chip" data-f="${f}" data-t="${t}">${l}${f === 7 && t === 24 ? '' : ` ${f}h–${t === 24 ? '0h' : t + 'h'}`}</button>`).join('');
   $('presets').querySelectorAll('button').forEach(b => b.onclick = () => { $('from').value = b.dataset.f; $('to').value = b.dataset.t; markPreset(); if (mode === 'day') buildDays(); render(); });
