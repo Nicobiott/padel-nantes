@@ -1,4 +1,4 @@
-# Padel Nantes
+# Pistas 12
 
 Affiche, sur les 30 prochains jours, les créneaux de padel libres des clubs de la région nantaise. L'app est pensée pour le téléphone et s'installe sur l'écran d'accueil.
 

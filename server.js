@@ -33,4 +33,4 @@ http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': (types[path.extname(file)] || 'application/octet-stream') + '; charset=utf-8' });
     res.end(data);
   });
-}).listen(PORT, () => console.log(`Padel Nantes : http://localhost:${PORT}${process.env.MOCK === '1' ? ' (créneaux fictifs)' : ''}`));
+}).listen(PORT, () => console.log(`Pistas 12 : http://localhost:${PORT}${process.env.MOCK === '1' ? ' (créneaux fictifs)' : ''}`));
