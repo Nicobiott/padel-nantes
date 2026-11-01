@@ -94,3 +94,9 @@ Méthodes reprises de deux projets publics : github.com/Paddadie/ResaPadel (Doin
 - `server.js` : version locale, qui sert la page et des données fraîches.
 - `public/` : la page (`index.html`), les icônes et le manifeste pour l'écran d'accueil.
 - `.github/workflows/update.yml` : la mise à jour automatique et la publication.
+
+## Fiabilité
+
+- **Surveillance des clubs** : si un club ne répond plus 2 fois de suite (site modifié, panne), une notification part sur le canal ntfy `NTFY_TOPIC`, puis une autre quand il refonctionne. Garde l'appli ntfy abonnée à ton canal pour les recevoir (c'est rare).
+- **Mise à jour toujours active** : GitHub met en pause les tâches planifiées d'un dépôt public inactif depuis 60 jours. Le workflow `keepalive.yml` ajoute un commit vide une fois par mois si besoin.
+- **Fichier compact** : `data.json` est écrit au format compact (`format.js`), environ 3 fois plus léger ; l'appli le décompacte au chargement.

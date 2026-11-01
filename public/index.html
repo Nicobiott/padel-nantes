@@ -658,6 +658,14 @@ function route() {
   else if (mode === 'clubs') { detail = null; setMode('day'); }
 }
 
+// Format compact de data.json (voir format.js) : [jour, minutes, durée, prix, terrain] -> objets
+function unpack(d) {
+  if (!d || d.fmt !== 2) return d;
+  const pad = n => String(n).padStart(2, '0');
+  d.availability.forEach(a => { a.slots = (a.slots || []).map(([j, t, duration, price, c]) => ({ court: c == null ? null : a.courts[c], start: `${d.days[j]}T${pad(Math.floor(t / 60))}:${pad(t % 60)}`, duration, price })); });
+  return d;
+}
+
 function showUpdated() {
   const min = Math.round((Date.now() - Date.parse(data.generatedAt)) / 60000);
   const txt = min < 1 ? "à l'instant" : min < 60 ? `il y a ${min} min` : `il y a ${Math.round(min / 60)} h`;
@@ -671,6 +679,7 @@ function showUpdated() {
 (async () => {
   try {
     data = window.DEMO_DATA || await fetch('data.json', { cache: 'no-store' }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+    data = unpack(data);
   } catch (e) {
     $('list').innerHTML = `<div class="err">Impossible de charger les créneaux (${esc(e.message)}).</div>`;
     return;

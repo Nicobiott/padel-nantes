@@ -77,7 +77,7 @@ async function notify(topic, msg) {
   const res = await fetch('https://ntfy.sh/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ topic, tags: ['tennis'], ...msg }),
+    body: JSON.stringify({ topic, tags: ['tennis'], ...msg }), // msg.tags remplace l'icône si fourni
   });
   if (!res.ok) throw new Error(`ntfy HTTP ${res.status}`);
 }
@@ -91,4 +91,18 @@ function resolveTopic(watch, env) {
   return secrets[name] || env[name] || null;
 }
 
-module.exports = { findNewMatches, formatMessage, notify, matches, weekday, resolveTopic };
+// Surveillance des clubs : une panne est signalée au 2e échec consécutif (évite les fausses alertes d'un simple raté),
+// puis un message quand le club refonctionne. data.availability[].fails = nombre d'échecs consécutifs.
+function clubIncidents(prev, next, clubs) {
+  const name = (id) => clubs.find((c) => c.id === id)?.name || id;
+  const prevById = new Map((prev?.availability || []).map((a) => [a.id, a]));
+  const out = [];
+  for (const a of next.availability) {
+    const p = prevById.get(a.id);
+    if (a.status === 'erreur' && a.fails === 2) out.push({ title: `⚠️ Pistas 12 : ${name(a.id)} ne répond plus`, message: `Les créneaux de ${name(a.id)} ne sont plus récupérés (${a.error}). L'appli affiche « Récupération impossible » pour ce club.`, tags: ['warning'] });
+    if (a.status === 'ok' && (p?.fails || 0) >= 2) out.push({ title: `✅ Pistas 12 : ${name(a.id)} refonctionne`, message: `Les créneaux de ${name(a.id)} sont de nouveau à jour.`, tags: ['white_check_mark'] });
+  }
+  return out;
+}
+
+module.exports = { findNewMatches, formatMessage, notify, matches, weekday, resolveTopic, clubIncidents };

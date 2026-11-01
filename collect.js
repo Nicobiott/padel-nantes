@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const getAdapter = require('./adapters');
+const { pack, unpack } = require('./format');
 
 const DAYS = 60;
 // Seuls les clubs d'au moins MIN_COURTS terrains sont affichés (nombre inconnu = exclu). Mettre 0 pour tout voir.
@@ -48,9 +49,9 @@ async function loadPrevious(src) {
   try {
     if (/^https?:/.test(src)) {
       const res = await fetch(src, { cache: 'no-store', signal: AbortSignal.timeout(15000) });
-      return res.ok ? await res.json() : null;
+      return res.ok ? unpack(await res.json()) : null;
     }
-    return JSON.parse(fs.readFileSync(src, 'utf8'));
+    return unpack(JSON.parse(fs.readFileSync(src, 'utf8')));
   } catch { return null; }
 }
 
@@ -60,7 +61,14 @@ if (require.main === module) {
     const prevSrc = process.env.PREVIOUS_DATA || (fs.existsSync(out) ? out : null);
     const previous = await loadPrevious(prevSrc);
     const data = await collect();
-    fs.writeFileSync(out, JSON.stringify(data));
+    // Compteur d'échecs consécutifs par club (conservé d'une collecte à l'autre) pour la surveillance
+    const prevById = new Map((previous?.availability || []).map((a) => [a.id, a]));
+    for (const a of data.availability) {
+      const p = prevById.get(a.id);
+      a.fails = a.status === 'erreur' ? (p?.fails || 0) + 1 : 0;
+    }
+    fs.writeFileSync(out, JSON.stringify(pack(data)));
+    console.log(`data.json : ${(fs.statSync(out).size / 1024).toFixed(0)} Ko`);
     for (const a of data.availability) {
       const name = clubs.find((c) => c.id === a.id).name;
       console.log(`${a.status.padEnd(11)} ${name}${a.status === 'ok' ? ` : ${a.slots.length} créneaux, jusqu'au ${a.horizon}` : a.error ? ` : ${a.error}` : ''}`);
@@ -88,6 +96,15 @@ if (require.main === module) {
       if (topic) {
         try { await notify(topic, msg); } catch (e) { console.log(`  Envoi impossible : ${e.message}`); }
       } else console.log(`  Pas de canal ntfy configuré pour cette veille (${r.watch.notify || 'NTFY_TOPIC'}).`);
+    }
+
+    // Surveillance : prévient (ntfy, NTFY_TOPIC) quand un club tombe en panne 2 fois de suite, puis quand il remarche.
+    const { clubIncidents } = require('./alerts');
+    const incidents = clubIncidents(previous, data, clubs);
+    for (const msg of incidents) {
+      console.log(`Surveillance : ${msg.title}`);
+      const topic = resolveTopic({}, process.env);
+      if (topic) { try { await notify(topic, { ...msg, click: process.env.PAGE_URL || undefined }); } catch (e) { console.log(`  Envoi impossible : ${e.message}`); } }
     }
 
     // Échec du job seulement si tous les clubs branchés sont en erreur (pour être prévenu par e-mail).

@@ -79,3 +79,23 @@ test('withinDays ignore les créneaux trop loin', () => {
   assert.equal(matches(w, 'x', { start: '2026-11-05T18:00', duration: 90 }, now), true);
   assert.equal(matches(w, 'x', { start: '2026-11-20T18:00', duration: 90 }, now), false);
 });
+
+test('format compact : aller-retour sans perte', () => {
+  const { pack, unpack } = require('../format');
+  const data = { days: ['2026-11-05', '2026-11-06'], availability: [
+    { id: 'a', status: 'ok', slots: [{ court: 'T1', start: '2026-11-06T19:30', duration: 90, price: 48 }, { court: null, start: '2026-11-05T09:00', duration: 60, price: null }] },
+    { id: 'b', status: 'non-branche', slots: [] }] };
+  const packed = pack(data);
+  assert.equal(packed.fmt, 2);
+  assert.deepEqual(unpack(JSON.parse(JSON.stringify(packed))).availability.map((a) => a.slots), data.availability.map((a) => a.slots));
+});
+
+test('surveillance : panne signalée au 2e échec, puis retour', () => {
+  const { clubIncidents } = require('../alerts');
+  const clubs = [{ id: 'x', name: 'Club X' }];
+  const r1 = clubIncidents({ availability: [{ id: 'x', fails: 1 }] }, { availability: [{ id: 'x', status: 'erreur', fails: 2, error: 'HTTP 500' }] }, clubs);
+  assert.equal(r1.length, 1); assert.match(r1[0].title, /ne répond plus/);
+  assert.equal(clubIncidents({ availability: [{ id: 'x', fails: 0 }] }, { availability: [{ id: 'x', status: 'erreur', fails: 1 }] }, clubs).length, 0);
+  const r2 = clubIncidents({ availability: [{ id: 'x', fails: 3 }] }, { availability: [{ id: 'x', status: 'ok', fails: 0 }] }, clubs);
+  assert.match(r2[0].title, /refonctionne/);
+});

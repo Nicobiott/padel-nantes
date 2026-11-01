@@ -1,0 +1,30 @@
+# GitHub met en pause les tâches planifiées d'un dépôt public sans activité depuis 60 jours.
+# Une fois par mois, si le dernier commit date de plus de 40 jours, on ajoute un commit vide pour garder l'appli à jour.
+name: Garder la mise à jour active
+
+on:
+  schedule:
+    - cron: "23 5 1 * *"   # le 1er de chaque mois, 5h23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Commit vide si le dépôt est inactif
+        run: |
+          last=$(git log -1 --format=%ct)
+          age=$(( ( $(date +%s) - last ) / 86400 ))
+          echo "Dernier commit il y a $age jours"
+          if [ "$age" -ge 40 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "Maintien de la mise à jour automatique (dépôt inactif depuis $age jours)"
+            git push
+          fi
