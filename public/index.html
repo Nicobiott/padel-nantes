@@ -111,6 +111,7 @@
   .row b { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--turf); min-width:54px; }
   @media (prefers-color-scheme: dark) { .row b { color:var(--ball); } }
   .row .c { flex:1; font-weight:600; } .row small { color:var(--muted); display:block; font-size:13px; font-weight:400; }
+  .row.ext b { color:var(--muted); }
   .dayjump { display:block; background:var(--soft); border-radius:14px; padding:12px 14px; font-weight:600; color:var(--ink); text-decoration:none; }
   .dayjump small { display:block; font-weight:400; font-size:12px; color:var(--muted, #6b7280); margin-top:2px; }
   .alertbox { background:var(--soft); border-radius:16px; padding:14px; margin-top:22px; font-size:14px; color:var(--ink); }
@@ -310,7 +311,13 @@ function renderSearch() {
   if (!rows.length) html = '<div class="empty">Aucun créneau libre sur ces critères dans les 30 prochains jours.</div>';
   for (const r of rows.slice(0, 60)) {
     const d = r.start.slice(0, 10);
-    if (d !== last) { { const t = fmt.format(new Date(d + 'T12:00')); html += `<div class="dhead">${t[0].toUpperCase() + t.slice(1)}</div>`; } last = d; }
+    if (d !== last) {
+      const t = fmt.format(new Date(d + 'T12:00'));
+      html += `<div class="dhead">${t[0].toUpperCase() + t.slice(1)}</div>`;
+      // Clubs non branchés mais qui s'ouvrent sur un jour donné (Urban) : raccourci vers leur planning de ce jour
+      for (const c of visibleClubs().filter(c => c.dayUrl && avail[c.id]?.status === 'non-branche')) html += `<a class="row ext" ${dayAttrs(c, d)}><b>↗</b><span class="c">${esc(c.name)}<small>Voir ses dispos de ce jour sur son site (connexion requise)</small></span>›</a>`;
+      last = d;
+    }
     const p = r.prices.length ? `, dès ${Math.min(...r.prices)} €` : '';
     html += `<a class="row" ${slotAttrs(r.c, r.start)}><b>${r.start.slice(11, 16)}</b><span class="c">${esc(r.c.name)}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${[...r.durations].sort((a, b) => a - b).map(dur).join('/')}${p}</small></span>›</a>`;
   }
