@@ -5,5 +5,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          UA="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"
-          for u in https://www.espark-23.fr/reservation/ https://www.espark-23.fr/padel/ https://www.espark-23.fr/; do echo "=== $u"; curl -sL -A "$UA" "$u" -o p.html; wc -c p.html; grep -oiE '(href|src)="[^"]*(apex|book|reserv|padel|playtomic|anybuddy|doinsport|gestion-sports|kiwi|tenup|wa\.me|tel:)[^"]*"' p.html | sort -u | head -30; grep -oiE '.{0,120}padel.{0,160}' p.html | sed 's/<[^>]*>//g' | sort -u | head -15; done
+          curl -sL https://padel-espark23.doinsport.club/home -o h.html; wc -c h.html
+          grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' h.html | sort | uniq -c | head
+          grep -oiE '.{0,80}(whiteLabel|white-label|clubId|club_id|guid).{0,120}' h.html | head -10
+          for js in $(grep -oE 'src="[^"]*\.js"' h.html | sed 's/src="//;s/"$//' | head -8); do case $js in http*) u=$js;; *) u="https://padel-espark23.doinsport.club/$js";; esac; curl -sL "$u" | grep -oE '.{0,80}(white-labels|whiteLabel)[^"]{0,120}' | head -3; done
+          echo "=== API tries"
+          for q in "clubs/white-labels?domain=padel-espark23.doinsport.club" "clubs/white-labels?name=padel-espark23" "white-labels?domain=padel-espark23.doinsport.club" "clubs?whiteLabel.name=padel-espark23" "clubs?name=espark"; do echo "-- $q"; curl -s -H 'Accept: application/json' "https://api-v3.doinsport.club/$q" | head -c 600; echo; done
