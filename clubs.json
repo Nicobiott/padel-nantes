@@ -12,7 +12,8 @@
     "confidence": "probable",
     "note": "Créneaux visibles uniquement avec un compte MyUrban, site protégé contre les robots.",
     "bookingUrl": "https://myurban.fr/padel/reserver/",
-    "phone": "02 52 20 32 60"
+    "phone": "02 52 20 32 60",
+    "dayUrl": "https://myurban.fr/padel/reserver?date={date}&centerId=42&activity=7"
   },
   {
     "id": "le-sporting",
