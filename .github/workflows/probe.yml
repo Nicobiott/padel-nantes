@@ -5,13 +5,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          UA="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"
-          echo "=== AB"; curl -sL -A "$UA" https://www.anybuddyapp.com/fr/club/le-set-le-bignon/padel -o ab.html
-          grep -oE 'https://static.anybuddyapp.com/_next/static/chunks/[^"]+\.js[^"]*' ab.html | sort -u > js.txt; wc -l js.txt
-          while read u; do curl -sL "$u" > c.js; grep -oE '.{0,200}pre-reservation.{0,300}' c.js | head -4; done < js.txt
-          grep -oE '.{0,150}pre-reservation.{0,250}' ab.html | head -5
-          echo "=== AB pre-reservation page"; curl -sL -A "$UA" "https://www.anybuddyapp.com/fr/club/le-set-le-bignon/pre-reservation?activity=padel&date=2026-11-05&time=18:00" -o pr.html; wc -c pr.html; grep -oE '.{0,100}(2026-11-05|18:00).{0,100}' pr.html | head -5
-          echo "=== CANCHA"; for f in main.js custom.js; do curl -sL "https://lacancha.mymobileapp.fr/assets/js/$f" | grep -oiE '.{0,150}(\.asp\?|location\.href|getUrlParam|location\.search).{0,150}' | head -15; done
-          curl -sL -A "$UA" https://lacancha.mymobileapp.fr/ | grep -oiE '.{0,200}(onclick|\.asp).{0,200}' | head -20
-          echo "=== APEX"; for f in javascript_ax.js ax.iframe.functions.js; do curl -sL "https://www.apex-timing.com/gokarts/v4.70/javascript/$f" | grep -oiE '.{0,150}(location\.search|URLSearchParams|getUrlParam|[?&]date).{0,200}' | head -10; done
-          curl -sL -A "$UA" "https://www.apex-timing.com/gokarts/session_booking.php?center=66&id=1277" | grep -oiE '.{0,150}(date).{0,150}' | head -20
+          B="https://www.apex-timing.com/gokarts/session_booking.php?center=66&id=1277"
+          for q in "date=2026/11/05" "date=2026-11-05" "selected_date=2026/11/05" "day=2026/11/05" "d=2026/11/05"; do echo "$q -> $(curl -sL "$B&$q" | grep -oE "current_date = '[^']*'")"; done
+          echo "=== CANCHA main.asp"; curl -sL https://lacancha.mymobileapp.fr/main.asp | grep -oiE '.{0,160}(reserv|calendrier|myLoad|\.asp).{0,160}' | sort -u | head -30
