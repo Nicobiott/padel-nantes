@@ -5,9 +5,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          curl -sL https://padel-espark23.doinsport.club/home -o h.html; wc -c h.html
-          grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' h.html | sort | uniq -c | head
-          grep -oiE '.{0,80}(whiteLabel|white-label|clubId|club_id|guid).{0,120}' h.html | head -10
-          for js in $(grep -oE 'src="[^"]*\.js"' h.html | sed 's/src="//;s/"$//' | head -8); do case $js in http*) u=$js;; *) u="https://padel-espark23.doinsport.club/$js";; esac; curl -sL "$u" | grep -oE '.{0,80}(white-labels|whiteLabel)[^"]{0,120}' | head -3; done
-          echo "=== API tries"
-          for q in "clubs/white-labels?domain=padel-espark23.doinsport.club" "clubs/white-labels?name=padel-espark23" "white-labels?domain=padel-espark23.doinsport.club" "clubs?whiteLabel.name=padel-espark23" "clubs?name=espark"; do echo "-- $q"; curl -s -H 'Accept: application/json' "https://api-v3.doinsport.club/$q" | head -c 600; echo; done
+          curl -s -H 'Accept: application/json' "https://api-v3.doinsport.club/clubs?name=espark" > c.json
+          jq -c '.[] | {id, name, "@id": .["@id"], activities: (.activities // [] | map({id: (.id // .), name: (.name // null)})), timezone, address}' c.json | head -c 3000; echo
+          CID=$(jq -r '.[0].id' c.json); echo "CID=$CID"
+          curl -s -H 'Accept: application/json' "https://api-v3.doinsport.club/clubs/playgrounds/plannings/2026-11-06?club.id=$CID&from=00:00:00&to=23:59:59&bookingType=unique" > p.json
+          jq -c '(if type=="array" then . else .["hydra:member"] end) | .[] | {name, acts: [.activities[]? | {id, name, n: (.slots|length), first: (.slots[0].startAt), sample: (.slots[0].prices[0] | {duration, bookable, pricePerParticipant, participantCount})}]}' p.json | head -c 4000
