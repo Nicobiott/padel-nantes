@@ -56,3 +56,13 @@ test('Apex (L\'Autre Usine) : vraie réponse du 05/11/2026', () => {
   assert.deepStrictEqual(slots[0], { court: null, start: '2026-11-05T16:30', duration: 90, price: 40 });
   assert.deepStrictEqual(slots[4], { court: null, start: '2026-11-05T22:30', duration: 90, price: 45 });
 });
+
+test('MyMobileApp (La Cancha) : vraie réponse du 01/11/2026, un créneau par terrain libre', () => {
+  const { parseCalendar } = require('../adapters/mymobileapp');
+  const html = require('fs').readFileSync(__dirname + '/fixtures/mymobileapp-la-cancha-2026-11-01.html', 'utf8');
+  const slots = parseCalendar(html, 90);
+  assert.strictEqual(slots.length, 5); // 1 + 2 + 0 (18h complet) + 2
+  assert.deepStrictEqual(slots[0], { court: '2214', start: '2026-11-01T13:30', duration: 90, price: 42 });
+  assert.ok(!slots.some((s) => s.start.endsWith('18:00')));
+  assert.deepStrictEqual(slots.filter((s) => s.start.endsWith('18:30')).map((s) => s.court), ['2213', '2216']);
+});

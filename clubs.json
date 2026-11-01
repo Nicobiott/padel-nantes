@@ -183,10 +183,17 @@
     "lng": -0.8366,
     "courts": 4,
     "platform": "mymobileapp",
-    "platformId": null,
+    "platformId": {
+      "host": "lacancha.mymobileapp.fr",
+      "sport": 2,
+      "durations": [
+        60,
+        90
+      ]
+    },
     "confidence": "confirmé",
     "always": true,
-    "note": "4 terrains intérieurs. Créneaux visibles uniquement après connexion sur lacancha.mymobileapp.fr.",
+    "note": "4 terrains intérieurs. Planning public (MyMobileApp), réservation avec un compte La Cancha.",
     "bookingUrl": "https://lacancha.mymobileapp.fr",
     "phone": "06 16 11 97 71"
   },

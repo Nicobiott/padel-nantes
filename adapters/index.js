@@ -6,6 +6,7 @@ const adapters = {
   doinsport: require('./doinsport'),
   playtomic: require('./playtomic'),
   apex: require('./apex'),
+  mymobileapp: require('./mymobileapp'),
 };
 const mock = require('./mock');
 

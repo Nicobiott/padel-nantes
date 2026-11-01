@@ -65,7 +65,7 @@ Seuls les clubs d'au moins 4 terrains sont affichés (`MIN_COURTS` dans `collect
 | Urban Padel Carquefou | 11 | MyUrban (Urban Soccer) | pas branchable : compte obligatoire et anti-robot |
 | Centre de Ligue (Vertou) | 4 | Ten'Up | pas branché : Ten'Up bloque les robots |
 | La Pala (Les Ponts-de-Cé) | 8 | Gestion Sports (app La Pala) | pas branchable : app mobile avec compte |
-| La Cancha (Cholet) | 4 | MyMobileApp | pas branchable : compte obligatoire |
+| La Cancha (Cholet) | 4 | MyMobileApp | branché, vérifié le 01/11/2026 (planning public) |
 | L'Autre Usine (Cholet) | ? | Apex Timing | branché (horaires libres, sans le nombre de terrains) |
 | ESPARK 23 (Ancenis) | 2 | Apex Timing (sans le padel) | pas réservable en ligne |
 
