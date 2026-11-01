@@ -1,11 +1,11 @@
-// Récupère les créneaux de tous les clubs sur 30 jours.
+// Récupère les créneaux de tous les clubs sur 60 jours.
 //   node collect.js                 -> écrit public/data.json (utilisé par GitHub Actions)
 //   require('./collect').collect()  -> renvoie les données (utilisé par server.js)
 const fs = require('fs');
 const path = require('path');
 const getAdapter = require('./adapters');
 
-const DAYS = 30;
+const DAYS = 60;
 // Seuls les clubs d'au moins MIN_COURTS terrains sont affichés (nombre inconnu = exclu). Mettre 0 pour tout voir.
 const MIN_COURTS = 4;
 const clubs = JSON.parse(fs.readFileSync(path.join(__dirname, 'clubs.json'), 'utf8')).filter((c) => c.always || (c.courts || 0) >= MIN_COURTS); // "always": club gardé quel que soit son nombre de terrains

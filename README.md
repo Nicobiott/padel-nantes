@@ -1,6 +1,6 @@
 # Pistas 12
 
-Affiche, sur les 30 prochains jours, les créneaux de padel libres des clubs de la région nantaise. L'app est pensée pour le téléphone et s'installe sur l'écran d'accueil.
+Affiche, sur les 60 prochains jours, les créneaux de padel libres des clubs de la région nantaise. L'app est pensée pour le téléphone et s'installe sur l'écran d'accueil.
 
 ## Mettre l'app en ligne (gratuit, sans serveur)
 GitHub récupère les créneaux toutes les 30 minutes et publie la page sur GitHub Pages.
@@ -88,7 +88,7 @@ Méthodes reprises de deux projets publics : github.com/Paddadie/ResaPadel (Doin
 ## Structure
 - `clubs.json` : les clubs, leur plateforme (`platform`) et leur identifiant sur celle-ci (`platformId`).
 - `adapters/` : un module par plateforme, qui renvoie les créneaux dans un format commun.
-- `collect.js` : récupère tous les clubs sur 30 jours, écrit `public/data.json` et envoie les alertes.
+- `collect.js` : récupère tous les clubs sur 60 jours, écrit `public/data.json` et envoie les alertes.
 - `alerts.js` et `watches.json` : détection des nouveaux créneaux et veilles.
 - `test/` : tests automatiques (`node --test`), lancés à chaque mise à jour.
 - `server.js` : version locale, qui sert la page et des données fraîches.

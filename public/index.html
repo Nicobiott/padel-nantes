@@ -383,7 +383,7 @@ function renderSearch() {
   const fmt = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   let html = '', last = '';
   if (!wdays.size) return '<div class="empty">Choisis au moins un jour de la semaine.</div>';
-  if (!rows.length) html = '<div class="empty">Aucun créneau libre sur ces critères dans les 30 prochains jours.</div>';
+  if (!rows.length) html = '<div class="empty">Aucun créneau libre sur ces critères dans les 60 prochains jours.</div>';
   for (const r of rows.slice(0, 60)) {
     const d = r.start.slice(0, 10);
     if (d !== last) {
@@ -429,7 +429,7 @@ function renderClubs() {
     let info;
     if (!live) info = a.status === 'adherents' ? 'Réservé aux adhérents' : a.status === 'erreur' ? 'Récupération impossible pour le moment' : 'Créneaux pas encore consultables ici';
     else if (next) info = `<span class="next">Prochain : ${fmtShort.format(new Date(next.start.slice(0, 10) + 'T12:00')).replace('.', '')} à ${next.start.slice(11, 16)}</span>, ${nWeek} horaire${nWeek > 1 ? 's' : ''} libre${nWeek > 1 ? 's' : ''} sur 7 jours`;
-    else info = 'Aucun créneau libre dans ta tranche sur 30 jours';
+    else info = 'Aucun créneau libre dans ta tranche sur 60 jours';
     return `<div class="crow"><div class="t"><a href="#club-${c.id}">${esc(c.name)}</a>${starBtn(c)}</div><a class="sub" href="#club-${c.id}"><small>${esc(c.city)}${kmLabel(c)}${c.courts ? `, ${c.courts} terrain${c.courts > 1 ? 's' : ''}` : ''}</small><small>${info}</small></a></div>`;
   };
   const shown = rows.filter(r => !hiddenClubs.has(r.c.id)), masked = rows.filter(r => hiddenClubs.has(r.c.id));
@@ -511,7 +511,7 @@ function showUpdated() {
   data.availability.forEach(a => avail[a.id] = a);
   date = data.days[0];
   $('date').min = data.days[0]; $('date').max = data.days[data.days.length - 1];
-  $('date').onchange = () => { if (data.days.includes($('date').value)) setDate($('date').value); else { $('date').value = date; alert('Choisis une date dans les 30 prochains jours.'); } };
+  $('date').onchange = () => { if (data.days.includes($('date').value)) setDate($('date').value); else { $('date').value = date; alert('Choisis une date dans les 60 prochains jours.'); } };
   const qd = new URLSearchParams(location.search).get('date');
   const prefs = store.get('prefs', {});
   $('from').innerHTML = Array.from({ length: 17 }, (_, i) => i + 7).map(h => `<option value="${h}">${h}h</option>`).join('');
