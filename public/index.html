@@ -166,6 +166,7 @@
   .mini b { font-size:15px; font-variant-numeric:tabular-nums; } .mini small { font-size:11px; color:var(--gold); }
   .mini:active { border-color:var(--gold); transform:scale(.96); }
   .cempty { color:var(--muted); font-size:13px; }
+  .mini.ext { border-color:rgba(217,180,90,.45); } .mini.ext small { color:var(--muted); }
 
   /* Favoris, partage */
   .star { border:0; background:none; color:var(--muted); font-size:20px; line-height:1; padding:4px 6px; margin-left:4px; cursor:pointer; vertical-align:2px; }
@@ -382,7 +383,8 @@ let compact = false;
 // Vue compacte : une ligne par club, horaires en petites pastilles
 function compactCard(c, a) {
   let body;
-  if (!a.horizon || date > a.horizon) body = '<span class="cempty">pas encore ouvert</span>';
+  if (a.status === 'non-branche' && c.dayUrl) body = `<a class="mini ext" ${dayAttrs(c, date)}><b>Voir ses dispos du jour ↗</b><small>connexion requise</small></a>`;
+  else if (!a.horizon || date > a.horizon) body = '<span class="cempty">pas encore ouvert</span>';
   else {
     const groups = {};
     filtered(a, date).forEach(s => (groups[s.start.slice(11, 16)] ||= []).push(s));
@@ -409,8 +411,10 @@ function renderDay() {
   let html = `<div class="summary">${notOpen ? `Le ${fmtShort.format(new Date(date + 'T12:00')).replace('.', '')} n'est pas encore ouvert à la réservation dans ces clubs.`
     : nTimes ? `<b>${nTimes} créneau${nTimes > 1 ? 'x' : ''} libre${nTimes > 1 ? 's' : ''}</b> dans <b>${nClubs} club${nClubs > 1 ? 's' : ''}</b> le ${fmtLong.format(new Date(date + 'T12:00'))}, entre ${tr}.`
     : `Aucun créneau libre le ${fmtLong.format(new Date(date + 'T12:00'))} entre ${tr}. Essaie une autre tranche ou un autre jour.`}</div>`;
-  html += live.map(x => (compact ? compactCard : clubCard)(x.c, x.a)).join('');
-  if (other.length) html += `<div class="section">Autres clubs</div>` + other.map(x => clubCard(x.c, x.a)).join('');
+  // Un club favori avec lien direct (Urban) remonte en tête, avant les clubs en direct
+  const top = other.filter(x => isFav(x.c) && x.c.dayUrl); other.splice(0, other.length, ...other.filter(x => !top.includes(x)));
+  html += [...top, ...live].map(x => (compact ? compactCard : clubCard)(x.c, x.a)).join('');
+  if (other.length) html += `<div class="section">Autres clubs</div>` + other.map(x => (compact ? compactCard : clubCard)(x.c, x.a)).join('');
   return html;
 }
 
@@ -474,7 +478,8 @@ function renderClubs() {
   rows.sort((x, y) => favFirst(x, y) || (y.live - x.live) || (me ? (km(x.c) ?? 1e9) - (km(y.c) ?? 1e9) : y.nWeek - x.nWeek));
   const line = ({ c, a, live, nWeek, next }) => {
     let info;
-    if (!live) info = a.status === 'adherents' ? 'Réservé aux adhérents' : a.status === 'erreur' ? 'Récupération impossible pour le moment' : 'Créneaux pas encore consultables ici';
+    if (!live && c.dayUrl) info = 'Dispos sur son site, ouvert directement sur le jour choisi';
+    else if (!live) info = a.status === 'adherents' ? 'Réservé aux adhérents' : a.status === 'erreur' ? 'Récupération impossible pour le moment' : 'Créneaux pas encore consultables ici';
     else if (next) info = `<span class="next">Prochain : ${fmtShort.format(new Date(next.start.slice(0, 10) + 'T12:00')).replace('.', '')} à ${next.start.slice(11, 16)}</span>, ${nWeek} horaire${nWeek > 1 ? 's' : ''} libre${nWeek > 1 ? 's' : ''} sur 7 jours`;
     else info = 'Aucun créneau libre dans ta tranche sur 60 jours';
     return `<div class="crow"><div class="t">${badge(c)}<a href="#club-${c.id}">${esc(c.name)}</a>${starBtn(c)}</div><a class="sub" href="#club-${c.id}"><small>${esc(c.city)}${kmLabel(c)}${c.courts ? `, ${c.courts} terrain${c.courts > 1 ? 's' : ''}` : ''}</small><small>${info}</small></a></div>`;

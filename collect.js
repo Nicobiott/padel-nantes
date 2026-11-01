@@ -11,7 +11,7 @@ const MIN_COURTS = 4;
 // "always" : club gardé quel que soit son nombre de terrains. Seuls les clubs dont on lit le planning en direct sont affichés.
 const clubs = JSON.parse(fs.readFileSync(path.join(__dirname, 'clubs.json'), 'utf8'))
   .filter((c) => c.always || (c.courts || 0) >= MIN_COURTS)
-  .filter(getAdapter.isConnected);
+  .filter((c) => getAdapter.isConnected(c) || c.dayUrl); // exception : clubs avec un lien direct vers leur planning du jour (Urban)
 
 function nextDays(n) {
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date());
