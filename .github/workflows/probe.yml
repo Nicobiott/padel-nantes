@@ -6,13 +6,12 @@ jobs:
     steps:
       - run: |
           UA="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"
-          echo "=== ANYBUDDY"; curl -sL -A "$UA" https://www.anybuddyapp.com/fr/club/le-set-le-bignon/padel -o ab.html; wc -c ab.html
-          grep -oE 'href="[^"]*"' ab.html | sort -u | head -60
-          grep -oE '[^"]{0,80}(date|Date)=[^"]{0,80}' ab.html | sort -u | head -30
-          for js in $(grep -oE '/_next/static/[^"]+\.js' ab.html | sort -u); do curl -sL "https://www.anybuddyapp.com$js" | grep -oE '.{0,120}(searchParams|query)\.(get\()?["'"'"']?(date|day|startDate)["'"'"']?.{0,120}' | head -5; done
-          echo "=== CANCHA"; curl -sL -A "$UA" https://lacancha.mymobileapp.fr/ -o mc.html; wc -c mc.html
-          grep -oiE '(href|action|src)="[^"]*"' mc.html | sort -u | head -60
-          grep -oiE '.{0,100}(calendrier|reserv|myDate).{0,100}' mc.html | sort -u | head -30
-          echo "=== APEX"; curl -sL -A "$UA" "https://www.apex-timing.com/gokarts/session_booking.php?center=66&id=1277" -o ax.html; wc -c ax.html
-          grep -oiE '.{0,100}(\$_GET|getParam|location\.search|URLSearchParams|[?&]date=|selected_date|load_schedules).{0,150}' ax.html | sort -u | head -30
-          grep -oE 'src="[^"]*\.js[^"]*"' ax.html | head
+          echo "=== AB"; curl -sL -A "$UA" https://www.anybuddyapp.com/fr/club/le-set-le-bignon/padel -o ab.html
+          grep -oE 'https://static.anybuddyapp.com/_next/static/chunks/[^"]+\.js[^"]*' ab.html | sort -u > js.txt; wc -l js.txt
+          while read u; do curl -sL "$u" > c.js; grep -oE '.{0,200}pre-reservation.{0,300}' c.js | head -4; done < js.txt
+          grep -oE '.{0,150}pre-reservation.{0,250}' ab.html | head -5
+          echo "=== AB pre-reservation page"; curl -sL -A "$UA" "https://www.anybuddyapp.com/fr/club/le-set-le-bignon/pre-reservation?activity=padel&date=2026-11-05&time=18:00" -o pr.html; wc -c pr.html; grep -oE '.{0,100}(2026-11-05|18:00).{0,100}' pr.html | head -5
+          echo "=== CANCHA"; for f in main.js custom.js; do curl -sL "https://lacancha.mymobileapp.fr/assets/js/$f" | grep -oiE '.{0,150}(\.asp\?|location\.href|getUrlParam|location\.search).{0,150}' | head -15; done
+          curl -sL -A "$UA" https://lacancha.mymobileapp.fr/ | grep -oiE '.{0,200}(onclick|\.asp).{0,200}' | head -20
+          echo "=== APEX"; for f in javascript_ax.js ax.iframe.functions.js; do curl -sL "https://www.apex-timing.com/gokarts/v4.70/javascript/$f" | grep -oiE '.{0,150}(location\.search|URLSearchParams|getUrlParam|[?&]date).{0,200}' | head -10; done
+          curl -sL -A "$UA" "https://www.apex-timing.com/gokarts/session_booking.php?center=66&id=1277" | grep -oiE '.{0,150}(date).{0,150}' | head -20
