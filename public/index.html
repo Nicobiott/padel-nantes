@@ -40,49 +40,78 @@
   .gold-text { background:var(--gold-grad); background-size:250% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:shine 6s ease-in-out infinite; }
 
   /* En-tête : un vrai terrain de padel vu du dessus */
-  .court { position:relative; color:#fff; padding:calc(14px + env(safe-area-inset-top)) 16px 20px; background:linear-gradient(180deg, #091830 0%, #0A1B36 100%); border-bottom:1px solid rgba(217,180,90,.25); }
+  .court { position:relative; overflow:hidden; color:#fff; padding:calc(14px + env(safe-area-inset-top)) 16px 20px; background:linear-gradient(180deg, #091830 0%, #0A1B36 100%); border-bottom:1px solid rgba(217,180,90,.25); }
   .court-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
   .brand { display:flex; align-items:center; gap:10px; }
   .brand svg { flex:0 0 auto; filter:drop-shadow(0 0 6px rgba(217,180,90,.35)); }
   .court h1 { margin:0; font-size:28px; font-weight:800; font-stretch:82%; letter-spacing:.01em; line-height:1; }
   #updated { font-size:12px; color:rgba(238,242,249,.6); }
 
-  /* Vitres (parois) autour du terrain, grillage au milieu des côtés */
-  .walls { position:relative; padding:6px; border-radius:10px;
-    background:linear-gradient(180deg, rgba(160,200,255,.22), rgba(160,200,255,.10) 30%, rgba(160,200,255,.10) 70%, rgba(160,200,255,.22));
-    box-shadow:inset 0 0 0 1px rgba(200,225,255,.28), 0 10px 30px rgba(0,0,0,.35); }
-  .walls::before, .walls::after { content:''; position:absolute; top:34%; bottom:34%; width:6px;
-    background:repeating-linear-gradient(45deg, rgba(200,225,255,.35) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(200,225,255,.35) 0 1px, transparent 1px 4px); }
-  .walls::before { left:0; border-radius:10px 0 0 10px; } .walls::after { right:0; border-radius:0 10px 10px 0; }
-  .lamp { position:absolute; z-index:3; width:14px; height:14px; border-radius:50%; pointer-events:none;
-    background:radial-gradient(circle, #FFFDF2 0 30%, #FFE9A8 45%, rgba(255,233,168,0) 70%); box-shadow:0 0 14px 6px rgba(255,240,200,.45), 0 0 34px 14px rgba(255,240,200,.18); }
-  .lamp.tl { left:-4px; top:-4px; } .lamp.tr { right:-4px; top:-4px; } .lamp.bl { left:-4px; bottom:-4px; } .lamp.br { right:-4px; bottom:-4px; }
-  .pitch { position:relative; border:2px solid rgba(255,255,255,.9); border-radius:3px; padding:14px 12px 12px;
+  /* Parois : vitres (fonds et bouts des côtés), grillage au milieu des côtés, montants métalliques */
+  .walls { position:relative; padding:7px; border-radius:6px;
+    background:
+      linear-gradient(#3A475E,#1B2436) left 0 top 0% / 7px 4px no-repeat,
+      linear-gradient(#3A475E,#1B2436) left 0 top 22% / 7px 4px no-repeat,
+      linear-gradient(#3A475E,#1B2436) left 0 top 40% / 7px 4px no-repeat,
+      linear-gradient(#3A475E,#1B2436) left 0 top 60% / 7px 4px no-repeat,
+      linear-gradient(#3A475E,#1B2436) left 0 top 78% / 7px 4px no-repeat,
+      linear-gradient(#3A475E,#1B2436) left 0 top 100% / 7px 4px no-repeat,
+      linear-gradient(#3A475E,#1B2436) right 0 top 0% / 7px 4px no-repeat,
+      linear-gradient(#3A475E,#1B2436) right 0 top 22% / 7px 4px no-repeat,
+      linear-gradient(#3A475E,#1B2436) right 0 top 40% / 7px 4px no-repeat,
+      linear-gradient(#3A475E,#1B2436) right 0 top 60% / 7px 4px no-repeat,
+      linear-gradient(#3A475E,#1B2436) right 0 top 78% / 7px 4px no-repeat,
+      linear-gradient(#3A475E,#1B2436) right 0 top 100% / 7px 4px no-repeat,
+      linear-gradient(#3A475E,#1B2436) left 25% top 0 / 4px 7px no-repeat,
+      linear-gradient(#3A475E,#1B2436) left 25% bottom 0 / 4px 7px no-repeat,
+      linear-gradient(#3A475E,#1B2436) left 50% top 0 / 4px 7px no-repeat,
+      linear-gradient(#3A475E,#1B2436) left 50% bottom 0 / 4px 7px no-repeat,
+      linear-gradient(#3A475E,#1B2436) left 75% top 0 / 4px 7px no-repeat,
+      linear-gradient(#3A475E,#1B2436) left 75% bottom 0 / 4px 7px no-repeat,
+      linear-gradient(115deg, transparent 0 18%, rgba(255,255,255,.16) 19% 21%, transparent 22% 58%, rgba(255,255,255,.10) 59% 60%, transparent 61%),
+      linear-gradient(180deg, rgba(170,205,255,.30), rgba(170,205,255,.14) 12%, rgba(170,205,255,.14) 88%, rgba(170,205,255,.30));
+    box-shadow:inset 0 0 0 1.5px rgba(205,228,255,.40), 0 0 0 1px #0A1222, 0 14px 34px rgba(0,0,0,.45); }
+  .walls::before, .walls::after { content:''; position:absolute; top:30%; bottom:30%; width:7px; background-color:#0B1426;
+    background-image:repeating-linear-gradient(45deg, rgba(205,228,255,.45) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(205,228,255,.45) 0 1px, transparent 1px 4px); }
+  .walls::before { left:0; } .walls::after { right:0; }
+  /* 4 projecteurs : tête de lampe hors du terrain + faisceau vers le centre */
+  .lamp { position:absolute; z-index:3; width:16px; height:10px; border-radius:3px; pointer-events:none; background:linear-gradient(#2B3447,#141B2A); box-shadow:0 1px 2px rgba(0,0,0,.6); }
+  .lamp::before { content:''; position:absolute; inset:2px 3px; border-radius:2px; background:#FFFBEA; box-shadow:0 0 10px 4px rgba(255,244,210,.75), 0 0 28px 10px rgba(255,240,200,.30); }
+  .lamp::after { content:''; position:absolute; left:50%; top:50%; width:340px; height:340px; transform:translate(-50%,-50%); pointer-events:none; opacity:.5;
+    background:conic-gradient(from var(--a) at 50% 50%, rgba(255,246,215,.30) 0deg, rgba(255,246,215,.12) 26deg, rgba(255,246,215,.30) 52deg, transparent 52deg);
+    -webkit-mask:radial-gradient(circle at 50% 50%, #000 0 12%, transparent 55%); mask:radial-gradient(circle at 50% 50%, #000 0 12%, transparent 55%); }
+  .lamp.tl { left:-10px; top:-7px; --a:109deg; } .lamp.tr { right:-10px; top:-7px; --a:199deg; }
+  .lamp.br { right:-10px; bottom:-7px; --a:289deg; } .lamp.bl { left:-10px; bottom:-7px; --a:19deg; }
+  /* Gazon synthétique bleu roi : brins + sable de lestage + lumière des projecteurs */
+  .pitch { position:relative; border:2px solid rgba(255,255,255,.93); border-radius:1px; padding:16px 12px 14px;
     background-color:var(--turf);
-    /* Gazon synthétique bleu roi : brins fins */
-    /* Projecteurs aux 4 coins : halos de lumière sur le gazon */
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6 0.35' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.62  0 0 0 0 0.76  0 0 0 0 0.98  0 0 0 0.55 -0.3'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23f)'/%3E%3C/svg%3E"),
-      radial-gradient(60% 55% at 0% 0%, rgba(255,250,230,.20), transparent 70%), radial-gradient(60% 55% at 100% 0%, rgba(255,250,230,.20), transparent 70%),
-      radial-gradient(60% 55% at 0% 100%, rgba(255,250,230,.18), transparent 70%), radial-gradient(60% 55% at 100% 100%, rgba(255,250,230,.18), transparent 70%),
-      radial-gradient(70% 60% at 50% 50%, rgba(0,0,0,.10), transparent 75%);
-    background-size:160px 160px, auto, auto, auto, auto, auto; }
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6 0.35' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.62  0 0 0 0 0.76  0 0 0 0 0.98  0 0 0 0.55 -0.3'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23f)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.4' numOctaves='1' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.93  0 0 0 0 0.85  0 0 0 9 -7.6'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23s)' opacity='.35'/%3E%3C/svg%3E"),
+      radial-gradient(65% 55% at 0% 0%, rgba(255,250,230,.22), transparent 70%), radial-gradient(65% 55% at 100% 0%, rgba(255,250,230,.22), transparent 70%),
+      radial-gradient(65% 55% at 0% 100%, rgba(255,250,230,.20), transparent 70%), radial-gradient(65% 55% at 100% 100%, rgba(255,250,230,.20), transparent 70%),
+      radial-gradient(80% 70% at 50% 50%, rgba(4,16,48,.16), transparent 75%);
+    background-size:160px 160px, 120px 120px, auto, auto, auto, auto, auto;
+    box-shadow:inset 0 0 18px rgba(4,12,36,.45), 0 0 6px rgba(255,255,255,.15); }
   .pitch > * { position:relative; z-index:1; }
-  /* Zone de service : lignes de service, ligne médiane, filet doré et ses poteaux */
-  .service { position:relative; height:58px; margin:14px -12px; border-top:2px solid rgba(255,255,255,.85); border-bottom:2px solid rgba(255,255,255,.85); z-index:0; }
-  .service::before { content:''; position:absolute; left:50%; top:0; bottom:0; border-left:2px solid rgba(255,255,255,.85); transform:translateX(-1px); }
-  .net { position:absolute; left:-16px; right:-16px; top:50%; height:4px; transform:translateY(-50%); border-radius:2px;
-    background:var(--gold-grad); background-size:250% 100%; animation:shine 6s ease-in-out infinite; box-shadow:0 0 10px rgba(217,180,90,.55), 0 1px 0 rgba(0,0,0,.4); }
-  .net::before, .net::after { content:''; position:absolute; top:50%; width:8px; height:14px; transform:translateY(-50%); border-radius:2px; background:var(--gold-grad); background-size:250% 100%; box-shadow:0 0 8px rgba(217,180,90,.6); }
-  .net::before { left:-2px; } .net::after { right:-2px; }
-  .when { position:relative; display:flex; align-items:center; gap:10px; background:rgba(7,18,38,.55); border:1px solid rgba(217,180,90,.35); border-radius:12px; padding:10px 14px; cursor:pointer; backdrop-filter:blur(2px); }
+  /* Lignes de service, ligne médiane (dépasse de 20 cm), filet : bande grillagée + câble doré + poteaux */
+  .service { position:relative; height:64px; margin:16px -12px; border-top:2px solid rgba(255,255,255,.92); border-bottom:2px solid rgba(255,255,255,.92); z-index:0; }
+  .service::before { content:''; position:absolute; left:50%; top:-5px; bottom:-5px; border-left:2px solid rgba(255,255,255,.92); transform:translateX(-1px); }
+  .net { position:absolute; left:-21px; right:-21px; top:50%; height:9px; transform:translateY(-50%);
+    background:repeating-linear-gradient(90deg, rgba(10,16,30,.85) 0 1px, transparent 1px 4px), repeating-linear-gradient(0deg, rgba(10,16,30,.85) 0 1px, transparent 1px 3px), rgba(10,16,30,.25);
+    box-shadow:0 7px 6px -3px rgba(0,0,0,.35), 0 -7px 6px -3px rgba(0,0,0,.18); }
+  .net::before { content:''; position:absolute; left:0; right:0; top:-2px; height:3px; border-radius:2px; background:var(--gold-grad); background-size:250% 100%; animation:shine 6s ease-in-out infinite; box-shadow:0 0 9px rgba(217,180,90,.6); }
+  .net::after { content:''; position:absolute; left:-3px; right:-3px; top:50%; height:15px; transform:translateY(-50%);
+    background:linear-gradient(var(--gold-hi), var(--gold-deep)) left center / 7px 15px no-repeat, linear-gradient(var(--gold-hi), var(--gold-deep)) right center / 7px 15px no-repeat; filter:drop-shadow(0 0 5px rgba(217,180,90,.6)); }
+  /* Commandes posées sur le terrain : verre dépoli, cibles tactiles confortables */
+  .when { position:relative; display:flex; align-items:center; gap:10px; min-height:52px; background:rgba(8,20,48,.55); border:1px solid rgba(255,255,255,.22); border-radius:14px; padding:10px 14px; cursor:pointer; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); box-shadow:0 4px 14px rgba(0,0,0,.25); }
+  .when:active { transform:scale(.985); }
   .when svg { flex:0 0 auto; color:var(--gold); }
   .when input { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; }
-  #date-label { font-size:22px; font-weight:700; font-stretch:85%; line-height:1.15; }
+  #date-label { flex:1; min-width:0; font-size:clamp(17px, 5.3vw, 21px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700; font-stretch:85%; line-height:1.15; text-shadow:0 1px 2px rgba(0,0,0,.35); }
   #date-label::first-letter { text-transform:uppercase; }
-  .when .chev { margin-left:auto; opacity:.9; }
+  .when .chev { margin-left:auto; opacity:.9; color:var(--gold); }
   .presets { display:flex; gap:6px; }
-  .presets .chip { flex:1; text-align:center; justify-content:center; padding:9px 6px; font-size:15px; background:rgba(7,18,38,.5); color:#fff; border:1px solid rgba(255,255,255,.28); }
-  .presets .chip.on { background:var(--gold-grad); background-size:250% 100%; animation:shine 6s ease-in-out infinite; color:#1A1405; border-color:var(--gold-hi); font-weight:800; box-shadow:0 0 14px rgba(217,180,90,.45); }
+  .presets .chip { flex:1; text-align:center; justify-content:center; min-height:44px; padding:10px 6px; font-size:15px; font-weight:600; background:rgba(8,20,48,.55); color:#fff; border:1px solid rgba(255,255,255,.22); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); box-shadow:0 3px 10px rgba(0,0,0,.2); }
+  .presets .chip.on { background:var(--gold-grad); background-size:250% 100%; animation:shine 6s ease-in-out infinite; color:#1A1405; border-color:var(--gold-hi); font-weight:800; box-shadow:0 0 16px rgba(217,180,90,.5), 0 3px 10px rgba(0,0,0,.25); }
   .range { display:none; }
 
   /* Barre collante : jours, filtres */
