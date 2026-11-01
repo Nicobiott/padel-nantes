@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pistas 12</title>
 <meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Les pistes de padel libres autour de Nantes, Cholet et Ancenis, en un coup d'œil.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pistas 12 · les pistes de padel libres">
+<meta property="og:description" content="Tous les créneaux libres autour de Nantes en 2 secondes. Choisis ton jour, ta tranche, réserve.">
+<meta property="og:image" content="https://nicobiott.github.io/padel-nantes/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://nicobiott.github.io/padel-nantes/">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#091830">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Pistas 12">
@@ -45,7 +54,10 @@
   .brand { display:flex; align-items:center; gap:10px; }
   .brand svg { flex:0 0 auto; filter:drop-shadow(0 0 6px rgba(217,180,90,.35)); }
   .court h1 { margin:0; font-size:28px; font-weight:800; font-stretch:82%; letter-spacing:.01em; line-height:1; }
-  #updated { font-size:12px; color:rgba(238,242,249,.6); }
+  #updated { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:rgba(238,242,249,.75); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); padding:4px 9px; border-radius:999px; white-space:nowrap; }
+  #updated i { width:7px; height:7px; border-radius:50%; background:#4ADE80; box-shadow:0 0 8px #4ADE80; animation:pulse 2.4s ease-in-out infinite; }
+  #updated.stale { color:#F6C38A; border-color:rgba(246,195,138,.35); } #updated.stale i { background:#F59E0B; box-shadow:0 0 8px #F59E0B; }
+  @keyframes pulse { 50% { opacity:.35; } }
 
   /* Parois : vitres (fonds et bouts des côtés), grillage au milieu des côtés, montants métalliques */
   .walls { position:relative; padding:7px; border-radius:6px;
@@ -207,6 +219,13 @@
   .cempty { color:var(--muted); font-size:13px; }
   .mini.ext { border-color:rgba(217,180,90,.45); } .mini.ext small { color:var(--muted); }
 
+  /* Nouveaux créneaux */
+  .newtag { display:inline-block; font-style:normal; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:#1A1405; background:var(--gold-grad); background-size:250% 100%; animation:shine 6s ease-in-out infinite; border-radius:6px; padding:1px 5px; margin-top:3px; }
+  .row .c .newtag { margin:0 0 0 4px; vertical-align:2px; }
+  .slotw.isnew .slot, .mini.isnew { border-color:rgba(217,180,90,.8); box-shadow:0 0 12px rgba(217,180,90,.25); }
+  .mini.isnew b::after { content:''; display:inline-block; width:6px; height:6px; margin-left:4px; border-radius:50%; background:var(--gold); box-shadow:0 0 6px var(--gold); vertical-align:3px; }
+  .newsum { display:block; margin-top:4px; font-size:14px; font-weight:700; color:var(--gold-hi); }
+
   /* Favoris, partage */
   .star { border:0; background:none; color:var(--muted); font-size:20px; line-height:1; padding:4px 6px; margin-left:4px; cursor:pointer; vertical-align:2px; }
   .star.on { color:var(--gold); text-shadow:0 0 10px rgba(217,180,90,.55); }
@@ -345,12 +364,29 @@ function shareBtn(c, start, durations, prices) {
   return `<button class="share" data-text="${esc(lines.join('\n'))}" data-url="${esc(url)}" aria-label="Partager ce créneau"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>`;
 }
 // Pastille d'un horaire : lien de réservation + bouton partager
+// « Nouveau depuis ta dernière visite » : créneaux apparus depuis la version vue la dernière fois (annulations surtout).
+// Les jours tout juste ouverts à la réservation ne comptent pas (sinon toute une journée serait « nouvelle »).
+let fresh = new Set();
+const isNew = (c, start) => fresh.has(c.id + '|' + start);
+function computeFresh() {
+  const keys = [], hz = {};
+  for (const a of data.availability) { if (!a.horizon) continue; hz[a.id] = a.horizon; for (const s of a.slots) keys.push(a.id + '|' + s.start); }
+  const prev = store.get('seen', null);
+  if (prev && prev.gen === data.generatedAt) { fresh = new Set(prev.fresh || []); return; }
+  if (prev && prev.keys) {
+    const old = new Set(prev.keys), now = new Date().toISOString().slice(0, 16);
+    fresh = new Set(keys.filter(k => { const [id, st] = k.split('|'); return !old.has(k) && prev.hz?.[id] && st.slice(0, 10) <= prev.hz[id] && st > now; }));
+  }
+  store.set('seen', { gen: data.generatedAt, keys, hz, fresh: [...fresh] });
+}
+const newTag = '<em class="newtag">nouveau</em>';
 function slotChip(c, g, t) {
   const nCourts = new Set(g.map(s => s.court).filter(Boolean)).size;
   const prices = g.map(s => s.price).filter(p => p != null);
   const durations = [...new Set(g.map(s => s.duration))].sort((x, y) => x - y).map(dur).join('/');
   const sub = [nCourts ? `${nCourts} terr., ${durations}` : durations, prices.length ? `${perPlayer(Math.min(...prices))}/j` : ''].filter(Boolean).join(', ');
-  return `<div class="slotw"><a class="slot" ${slotAttrs(c, g[0].start)}><b>${t}</b><small>${sub}</small></a>${shareBtn(c, g[0].start, durations, prices)}</div>`;
+  const nw = g.some(s => isNew(c, s.start));
+  return `<div class="slotw${nw ? ' isnew' : ''}"><a class="slot" ${slotAttrs(c, g[0].start)}><b>${t}</b><small>${sub}</small>${nw ? newTag : ''}</a>${shareBtn(c, g[0].start, durations, prices)}</div>`;
 }
 // Créneaux d'un club pour une date, selon les filtres
 function filtered(a, d) {
@@ -430,7 +466,7 @@ function compactCard(c, a) {
     filtered(a, date).forEach(s => (groups[s.start.slice(11, 16)] ||= []).push(s));
     body = Object.entries(groups).map(([t, g]) => {
       const pr = g.map(s => s.price).filter(p => p != null);
-      return `<a class="mini" ${slotAttrs(c, g[0].start)}><b>${t}</b>${pr.length ? `<small>${perPlayer(Math.min(...pr))}</small>` : ''}</a>`;
+      return `<a class="mini${g.some(s => isNew(c, s.start)) ? ' isnew' : ''}" ${slotAttrs(c, g[0].start)}><b>${t}</b>${pr.length ? `<small>${perPlayer(Math.min(...pr))}</small>` : ''}</a>`;
     }).join('') || '<span class="cempty">complet</span>';
   }
   return `<div class="ccard${isFav(c) ? ' fav' : ''}"><div class="ch">${badge(c)}<a href="#club-${c.id}">${esc(c.name)}</a><span class="cm">${esc(c.city)}${kmLabel(c)}</span>${starBtn(c)}</div><div class="minis">${body}</div></div>`;
@@ -446,10 +482,11 @@ function renderDay() {
   live.sort((x, y) => favFirst(x, y) || (me ? byDist(x, y) : y.n - x.n));
   other.sort((x, y) => favFirst(x, y) || (me ? byDist(x, y) : 0));
   const nClubs = live.filter(x => x.n).length, nTimes = live.reduce((t, x) => t + x.n, 0);
+  const nNew = live.reduce((t, x) => t + new Set(filtered(x.a, date).filter(s => isNew(x.c, s.start)).map(s => s.start)).size, 0);
   const tr = `${$('from').value}h et ${$('to').value === '24' ? 'minuit' : $('to').value + 'h'}`;
   const notOpen = live.length && live.every(x => !x.a.horizon || date > x.a.horizon);
   let html = `<div class="summary">${notOpen ? `Le ${fmtShort.format(new Date(date + 'T12:00')).replace('.', '')} n'est pas encore ouvert à la réservation dans ces clubs.`
-    : nTimes ? `<b>${nTimes} créneau${nTimes > 1 ? 'x' : ''} libre${nTimes > 1 ? 's' : ''}</b> dans <b>${nClubs} club${nClubs > 1 ? 's' : ''}</b> le ${fmtLong.format(new Date(date + 'T12:00'))}, entre ${tr}.`
+    : nTimes ? `<b>${nTimes} créneau${nTimes > 1 ? 'x' : ''} libre${nTimes > 1 ? 's' : ''}</b> dans <b>${nClubs} club${nClubs > 1 ? 's' : ''}</b> le ${fmtLong.format(new Date(date + 'T12:00'))}, entre ${tr}.${nNew ? ` <span class="newsum">${nNew} nouveau${nNew > 1 ? 'x' : ''} depuis ta dernière visite</span>` : ''}`
     : `Aucun créneau libre le ${fmtLong.format(new Date(date + 'T12:00'))} entre ${tr}. Essaie une autre tranche ou un autre jour.`}</div>`;
   // Un club favori avec lien direct (Urban) remonte en tête, avant les clubs en direct
   const top = other.filter(x => isFav(x.c) && x.c.dayUrl); other.splice(0, other.length, ...other.filter(x => !top.includes(x)));
@@ -486,7 +523,7 @@ function renderSearch() {
     }
     const p = r.prices.length ? `, ${perPlayer(Math.min(...r.prices))}/joueur` : '';
     const durs = [...r.durations].sort((a, b) => a - b).map(dur).join('/');
-    html += `<div class="roww"><a class="row" ${slotAttrs(r.c, r.start)}><b>${r.start.slice(11, 16)}</b><span class="c">${badge(r.c)}${isFav(r.c) ? '<i class="fs">★</i> ' : ''}${esc(r.c.name)}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${durs}${p}</small></span></a>${shareBtn(r.c, r.start, durs, r.prices)}</div>`;
+    html += `<div class="roww"><a class="row" ${slotAttrs(r.c, r.start)}><b>${r.start.slice(11, 16)}</b><span class="c">${badge(r.c)}${isFav(r.c) ? '<i class="fs">★</i> ' : ''}${esc(r.c.name)}${isNew(r.c, r.start) ? ' ' + newTag : ''}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${durs}${p}</small></span></a>${shareBtn(r.c, r.start, durs, r.prices)}</div>`;
   }
   if (rows.length > 60) html += `<div class="empty">… et ${rows.length - 60} autres créneaux.</div>`;
   return html;
@@ -591,7 +628,11 @@ function route() {
 
 function showUpdated() {
   const min = Math.round((Date.now() - Date.parse(data.generatedAt)) / 60000);
-  $('updated').textContent = min < 1 ? "à l'instant" : min < 60 ? `il y a ${min} min` : `il y a ${Math.round(min / 60)} h`;
+  const txt = min < 1 ? "à l'instant" : min < 60 ? `il y a ${min} min` : `il y a ${Math.round(min / 60)} h`;
+  const stale = min > 75; // GitHub met parfois du retard : on prévient au-delà d'1 h 15
+  $('updated').className = stale ? 'stale' : 'fresh';
+  $('updated').innerHTML = `<i></i>${stale ? 'Données d’' : 'Mis à jour '}${txt}`;
+  $('updated').title = stale ? 'Les dispos peuvent avoir changé : vérifie sur le site du club avant de réserver.' : '';
 }
 
 (async () => {
@@ -602,6 +643,7 @@ function showUpdated() {
     return;
   }
   data.availability.forEach(a => avail[a.id] = a);
+  computeFresh();
   date = data.days[0];
   $('date').min = data.days[0]; $('date').max = data.days[data.days.length - 1];
   $('date').onchange = () => { if (data.days.includes($('date').value)) setDate($('date').value); else { $('date').value = date; alert('Choisis une date dans les 60 prochains jours.'); } };
