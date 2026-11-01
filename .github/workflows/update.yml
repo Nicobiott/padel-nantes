@@ -31,15 +31,14 @@ jobs:
           node-version: 22
       - name: Tests
         run: node --test
-      - id: pages
-        uses: actions/configure-pages@v5
       - name: Récupérer les créneaux et envoyer les alertes
         env:
-          PREVIOUS_DATA: ${{ steps.pages.outputs.base_url }}/data.json
-          PAGE_URL: ${{ steps.pages.outputs.base_url }}/
+          PREVIOUS_DATA: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data.json
+          PAGE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           SECRETS: ${{ toJSON(secrets) }}   # canaux ntfy de chacun (NTFY_TOPIC_PAUL, etc.)
         run: node collect.js
+      - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public
