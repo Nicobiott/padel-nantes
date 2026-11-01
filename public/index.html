@@ -133,6 +133,18 @@
   .dayjump { display:block; background:var(--soft); border:1px solid rgba(217,180,90,.35); border-radius:14px; padding:12px 14px; font-weight:600; color:var(--ink); text-decoration:none; }
   .dayjump small { display:block; font-weight:400; font-size:12px; color:var(--muted); margin-top:2px; }
 
+  /* Chargement : balle de padel dorée qui rebondit */
+  .loader { display:flex; flex-direction:column; align-items:center; padding:60px 0 30px; color:var(--muted); font-size:14px; }
+  .loader .ball { width:34px; height:34px; border-radius:50%; position:relative; background:radial-gradient(circle at 32% 30%, #FFF4CC 0%, var(--gold-hi) 18%, var(--gold) 52%, var(--gold-deep) 100%); box-shadow:0 0 18px rgba(217,180,90,.55); animation:bounce .7s cubic-bezier(.5,0,.5,1) infinite alternate; }
+  .loader .ball::before, .loader .ball::after { content:''; position:absolute; inset:3px; border-radius:50%; border:2px solid rgba(255,255,255,.75); clip-path:inset(0 55% 0 0); }
+  .loader .ball::after { clip-path:inset(0 0 0 55%); }
+  .loader .shadow { width:30px; height:6px; margin:6px 0 14px; border-radius:50%; background:rgba(0,0,0,.45); animation:squash .7s cubic-bezier(.5,0,.5,1) infinite alternate; }
+  @keyframes bounce { from { transform:translateY(-46px); } to { transform:translateY(0) scale(1.06, .94); } }
+  @keyframes squash { from { transform:scale(.5); opacity:.4; } to { transform:scale(1); opacity:1; } }
+  #list.swipe-l { animation:sl .22s ease-out; } #list.swipe-r { animation:sr .22s ease-out; }
+  @keyframes sl { from { transform:translateX(28px); opacity:.4; } to { transform:none; opacity:1; } }
+  @keyframes sr { from { transform:translateX(-28px); opacity:.4; } to { transform:none; opacity:1; } }
+
   /* Favoris, partage */
   .star { border:0; background:none; color:var(--muted); font-size:20px; line-height:1; padding:4px 6px; margin-left:4px; cursor:pointer; vertical-align:2px; }
   .star.on { color:var(--gold); text-shadow:0 0 10px rgba(217,180,90,.55); }
@@ -181,7 +193,7 @@
 <header class="court">
   <div class="court-top">
     <div class="brand">
-      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7E2A3"/><stop offset=".5" stop-color="#D9B45A"/><stop offset="1" stop-color="#A9822F"/></linearGradient></defs><rect x="6" y="2" width="20" height="28" rx="2" fill="none" stroke="url(#g)" stroke-width="2"/><path d="M6 16h20M6 10h20M6 22h20M16 10v12" stroke="url(#g)" stroke-width="1.5" fill="none"/><path d="M3 16h26" stroke="url(#g)" stroke-width="2.5"/></svg>
+      <svg width="34" height="38" viewBox="0 0 30 34" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF1C4"/><stop offset=".45" stop-color="#D9B45A"/><stop offset="1" stop-color="#9C7628"/></linearGradient></defs><g transform="rotate(-28 15 17)"><path d="M15 1.5c6 0 9.5 4 9.5 9.6 0 5.2-3.3 9-7 10.3l-.6 3h-3.8l-.6-3c-3.7-1.3-7-5.1-7-10.3C5.5 5.5 9 1.5 15 1.5z" fill="url(#g)"/><g fill="#0C1C38" opacity=".85"><circle cx="12" cy="8" r="1.1"/><circle cx="15" cy="7" r="1.1"/><circle cx="18" cy="8" r="1.1"/><circle cx="10.5" cy="11.2" r="1.1"/><circle cx="13.5" cy="10.6" r="1.1"/><circle cx="16.5" cy="10.6" r="1.1"/><circle cx="19.5" cy="11.2" r="1.1"/><circle cx="12" cy="14" r="1.1"/><circle cx="15" cy="13.6" r="1.1"/><circle cx="18" cy="14" r="1.1"/><circle cx="15" cy="16.8" r="1.1"/></g><rect x="13.2" y="24" width="3.6" height="9" rx="1.6" fill="url(#g)"/></g></svg>
       <h1 class="gold-text">Pistas 12</h1>
     </div>
     <span id="updated"></span>
@@ -216,7 +228,7 @@
 </nav>
 <main>
   <div class="install hidden" id="install"><span aria-hidden="true">📲</span><span>Pour l'avoir comme une app : touche <b>Partager</b> en bas de Safari, puis <b>Sur l'écran d'accueil</b>.</span><button id="install-x" aria-label="Fermer">×</button></div>
-  <div id="list">Chargement…</div>
+  <div id="list"><div class="loader" role="status" aria-label="Chargement"><div class="ball"></div><div class="shadow"></div><span>Chargement des pistes…</span></div></div>
 </main>
 
 <script>
@@ -234,7 +246,11 @@ function km(c) {
   const a = Math.sin(dLat / 2) ** 2 + Math.cos(me.lat * r) * Math.cos(c.lat * r) * Math.sin(dLng / 2) ** 2;
   return 6371 * 2 * Math.asin(Math.sqrt(a));
 }
-const kmLabel = c => { const d = km(c); return d == null ? '' : `, ${d < 10 ? d.toFixed(1).replace('.', ',') : Math.round(d)} km`; };
+// Trajet estimé en voiture à partir de la distance à vol d'oiseau (approximatif : détour moyen, vitesse selon la distance)
+function driveMin(d) { const road = d * 1.3, v = road < 8 ? 28 : road < 25 ? 45 : 70; const m = road / v * 60 + 3; return m < 30 ? Math.max(5, Math.round(m)) : Math.round(m / 5) * 5; }
+const kmLabel = c => { const d = km(c); return d == null ? '' : `, ${d < 10 ? d.toFixed(1).replace('.', ',') : Math.round(d)} km · ~${driveMin(d)} min`; };
+// Prix par joueur (les plateformes donnent le prix du terrain, partie à 4)
+const perPlayer = p => { const v = Math.round(p / 4 * 2) / 2; return (v % 1 ? v.toFixed(2).replace('.', ',') : v) + ' €'; };
 
 // Favoris (épinglés en haut) et clubs masqués, gardés sur le téléphone
 let favs = new Set(), hiddenClubs = new Set();
@@ -252,7 +268,7 @@ function shareBtn(c, start, durations, prices) {
   const jour = cap(new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(d));
   const min = prices.length ? Math.min(...prices) : null;
   const lines = [`🎾 ${jour} · ${start.slice(11, 16).replace(':', 'h')} · ${c.name} (${c.city})`,
-    [durations, min != null ? `dès ${min} € le terrain (≈ ${Math.round(min / 4)} €/joueur)` : ''].filter(Boolean).join(' · '),
+    [durations, min != null ? `${perPlayer(min)}/joueur (${min} € le terrain)` : ''].filter(Boolean).join(' · '),
     'Qui est chaud ?'];
   const m = (slotAttrs(c, start).match(/href="([^"]+)"/) || [])[1];
   const url = m ? m.replace(/&amp;/g, '&') : '';
@@ -263,7 +279,7 @@ function slotChip(c, g, t) {
   const nCourts = new Set(g.map(s => s.court).filter(Boolean)).size;
   const prices = g.map(s => s.price).filter(p => p != null);
   const durations = [...new Set(g.map(s => s.duration))].sort((x, y) => x - y).map(dur).join('/');
-  const sub = [nCourts ? `${nCourts} terr., ${durations}` : durations, prices.length ? `dès ${Math.min(...prices)} €` : ''].filter(Boolean).join(', ');
+  const sub = [nCourts ? `${nCourts} terr., ${durations}` : durations, prices.length ? `${perPlayer(Math.min(...prices))}/j` : ''].filter(Boolean).join(', ');
   return `<div class="slotw"><a class="slot" ${slotAttrs(c, g[0].start)}><b>${t}</b><small>${sub}</small></a>${shareBtn(c, g[0].start, durations, prices)}</div>`;
 }
 // Créneaux d'un club pour une date, selon les filtres
@@ -377,7 +393,7 @@ function renderSearch() {
       for (const c of visibleClubs().filter(c => c.dayUrl && avail[c.id]?.status === 'non-branche')) html += `<a class="row ext" ${dayAttrs(c, d)}><b>↗</b><span class="c">${esc(c.name)}<small>Voir ses dispos de ce jour sur son site (connexion requise)</small></span>›</a>`;
       last = d;
     }
-    const p = r.prices.length ? `, dès ${Math.min(...r.prices)} €` : '';
+    const p = r.prices.length ? `, ${perPlayer(Math.min(...r.prices))}/joueur` : '';
     const durs = [...r.durations].sort((a, b) => a - b).map(dur).join('/');
     html += `<div class="roww"><a class="row" ${slotAttrs(r.c, r.start)}><b>${r.start.slice(11, 16)}</b><span class="c">${isFav(r.c) ? '<i class="fs">★</i> ' : ''}${esc(r.c.name)}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${durs}${p}</small></span></a>${shareBtn(r.c, r.start, durs, r.prices)}</div>`;
   }
@@ -524,6 +540,18 @@ function showUpdated() {
   $('tab-clubs').onclick = () => { location.hash = 'clubs'; };
   $('tab-day').onclick = () => { history.replaceState(null, '', location.pathname + location.search); setMode('day'); };
   window.addEventListener('hashchange', route);
+  // Glisser à gauche / à droite sur la liste : jour suivant / précédent (vue Par jour)
+  let tx = null, ty = 0;
+  $('list').addEventListener('touchstart', e => { if (mode !== 'day' || e.touches.length !== 1) return; tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+  $('list').addEventListener('touchend', e => {
+    if (tx == null) return;
+    const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty; tx = null;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
+    const i = data.days.indexOf(date) + (dx < 0 ? 1 : -1);
+    if (i < 0 || i >= data.days.length) return;
+    setDate(data.days[i]);
+    const l = $('list'); l.classList.remove('swipe-l', 'swipe-r'); void l.offsetWidth; l.classList.add(dx < 0 ? 'swipe-l' : 'swipe-r');
+  }, { passive: true });
   favs = new Set(store.get('favs', [])); hiddenClubs = new Set(store.get('hidden', []));
   $('list').addEventListener('click', async e => {
     const fav = e.target.closest('[data-fav]'), hide = e.target.closest('[data-hide]'), sh = e.target.closest('.share');
