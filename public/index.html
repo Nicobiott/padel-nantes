@@ -235,6 +235,34 @@
   .sheet-actions .pri { background:var(--gold-grad); background-size:250% 100%; color:#1A1405; border:1px solid var(--gold-hi); }
   .hello { display:block; font-size:15px; font-weight:700; color:var(--gold-hi); margin-bottom:4px; }
 
+  /* Fenêtre d'un créneau : joueurs, partage, réservation */
+  .slotcard { position:relative; max-height:92vh; overflow:auto; }
+  .slotcard .x { position:absolute; right:12px; top:10px; width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-size:22px; line-height:1; cursor:pointer; }
+  .sc-club { display:flex; align-items:center; gap:2px; margin-bottom:12px; padding-right:40px; }
+  .sc-club b { display:block; font-size:18px; font-stretch:88%; } .sc-club small { color:var(--muted); font-size:13px; }
+  .sc-when { display:flex; align-items:baseline; gap:10px; }
+  .sc-time { font-size:40px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; background:var(--gold-grad); background-size:250% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:shine 6s ease-in-out infinite; }
+  .sc-when span:last-child { font-size:17px; font-weight:600; }
+  .sc-info { color:var(--muted); font-size:14px; margin:6px 0 16px; } .sc-info .warn { color:var(--warn); }
+  .sc-sec { font-size:14px; font-weight:700; color:var(--muted); margin-bottom:8px; display:flex; justify-content:space-between; }
+  .sc-sec b { color:var(--ink); font-size:15px; } .sc-sec b.full { color:var(--gold); }
+  .sc-players { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+  .pl { position:relative; display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:0 10px; min-height:46px; }
+  .pl .pn { width:22px; height:22px; flex:0 0 auto; display:grid; place-items:center; border-radius:50%; font-size:12px; font-weight:800; color:var(--muted); border:1px solid var(--line); }
+  .pl input { flex:1; min-width:0; border:0; outline:0; background:none; color:var(--ink); font-size:16px; padding:12px 0; }
+  .pl input:focus-visible { outline:none; } .pl:focus-within { border-color:var(--gold); box-shadow:0 0 0 3px rgba(217,180,90,.18); }
+  .pl .ok { font-style:normal; color:var(--gold); font-weight:800; opacity:0; }
+  .pl.filled { border-color:rgba(217,180,90,.6); } .pl.filled .pn { background:var(--gold); color:#1A1405; border-color:var(--gold); } .pl.filled .ok { opacity:1; }
+  .sc-actions { display:flex; flex-direction:column; gap:8px; }
+  .sc-share, .sc-book { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:14px; font-size:16px; font-weight:700; text-decoration:none; cursor:pointer; }
+  .sc-share { background:#25D366; color:#062B14; border:0; }
+  .sc-book { background:var(--surface); color:var(--ink); border:1px solid var(--line); }
+  .sc-book small { color:var(--muted); font-weight:600; }
+  .sc-book.ready { background:var(--gold-grad); background-size:250% 100%; animation:shine 6s ease-in-out infinite; color:#1A1405; border-color:var(--gold-hi); box-shadow:0 0 18px rgba(217,180,90,.45); }
+  .sc-reset { display:block; margin:12px auto 0; border:0; background:none; color:var(--muted); font-size:13px; text-decoration:underline; cursor:pointer; }
+  .pcount { display:inline-block; font-style:normal; font-size:10.5px; font-weight:800; color:var(--ink); border:1px solid var(--gold); border-radius:6px; padding:0 5px; margin-left:5px; vertical-align:2px; }
+  .slot .pcount { margin:3px 0 0; } .pcount.full { background:var(--gold); color:#1A1405; }
+
   /* Nouveaux créneaux */
   .newtag { display:inline-block; font-style:normal; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:#1A1405; background:var(--gold-grad); background-size:250% 100%; animation:shine 6s ease-in-out infinite; border-radius:6px; padding:1px 5px; margin-top:3px; }
   .row .c .newtag { margin:0 0 0 4px; vertical-align:2px; }
@@ -325,6 +353,7 @@
   <button id="tab-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Recherche</button>
   <button id="tab-clubs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 12h16M12 3v18"/></svg>Clubs</button>
 </nav>
+<div class="sheet hidden" id="slot-sheet" role="dialog" aria-modal="true" aria-label="Créneau"></div>
 <div class="sheet hidden" id="me-sheet" role="dialog" aria-modal="true" aria-labelledby="me-title">
   <form class="sheet-card" id="me-form">
     <h3 id="me-title">Qui utilise l'appli ?</h3>
@@ -375,18 +404,82 @@ function badge(c) {
 }
 function starBtn(c) { return `<button class="star${isFav(c) ? ' on' : ''}" data-fav="${c.id}" aria-label="${isFav(c) ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${isFav(c) ? '★' : '☆'}</button>`; }
 
-// Partage d'un créneau (WhatsApp, Messages…) : texte prêt à envoyer + lien de réservation
-function shareBtn(c, start, durations, prices) {
-  const d = new Date(start.slice(0, 10) + 'T12:00');
-  const jour = cap(new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(d));
-  const min = prices.length ? Math.min(...prices) : null;
-  const lines = [`🎾 ${jour} · ${start.slice(11, 16).replace(':', 'h')} · ${c.name} (${c.city})`,
-    [durations, min != null ? `${perPlayer(min)}/joueur (${min} € le terrain)` : ''].filter(Boolean).join(' · '),
-    'Qui est chaud ?' + (userName ? ` (${userName.split(' ')[0]})` : '')];
-  const m = (slotAttrs(c, start).match(/href="([^"]+)"/) || [])[1];
-  const url = m ? m.replace(/&amp;/g, '&') : '';
-  return `<button class="share" data-text="${esc(lines.join('\n'))}" data-url="${esc(url)}" aria-label="Partager ce créneau"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>`;
+// Bouton partager d'un créneau : ouvre la fenêtre de partage / organisation de la partie
+function shareBtn(c, start) {
+  return `<button class="share" data-slot="${c.id}|${start}" aria-label="Partager ce créneau"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>`;
 }
+
+// Parties en préparation, gardées sur ce téléphone : { "clubId|start": ["Nicolas", "Paul", "", ""] }
+let games = {};
+const gameKey = (c, start) => c.id + '|' + start;
+const gameCount = (c, start) => (games[gameKey(c, start)] || []).filter(n => n && n.trim()).length;
+function saveGames() {
+  const now = new Date().toISOString().slice(0, 16);
+  for (const k of Object.keys(games)) if (k.split('|')[1] < now || !games[k].some(n => n && n.trim())) delete games[k];
+  store.set('games', games);
+}
+const countTag = (c, start) => { const n = gameCount(c, start); return n ? `<em class="pcount${n >= 4 ? ' full' : ''}">${n}/4</em>` : ''; };
+
+// Lien vers l'appli qui rouvre ce créneau (pas vers la plateforme de réservation)
+function appSlotUrl(c, start) {
+  const h = +start.slice(11, 13), tr = h < 13 ? [9, 13] : h < 18 ? [13, 18] : [18, 22];
+  return `${location.origin}${location.pathname}?date=${start.slice(0, 10)}&de=${tr[0]}&a=${tr[1]}&slot=${encodeURIComponent(c.id + '|' + start)}`;
+}
+
+// Fenêtre d'un créneau : détails, joueurs (4 cases), partager dans le groupe, réserver sur le site du club
+function openSlot(clubId, start) {
+  const c = data.clubs.find(x => x.id === clubId), a = avail[clubId];
+  if (!c || !a) return;
+  const g = a.slots.filter(s => s.start === start);
+  const sheet = $('slot-sheet');
+  const d = new Date(start.slice(0, 10) + 'T12:00');
+  const jour = cap(fmtLong.format(d)), jourCourt = cap(new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(d));
+  const prices = g.map(s => s.price).filter(p => p != null), min = prices.length ? Math.min(...prices) : null;
+  const durations = [...new Set(g.map(s => s.duration))].sort((x, y) => x - y).map(dur).join('/');
+  const nCourts = new Set(g.map(s => s.court).filter(Boolean)).size;
+  const key = gameKey(c, start);
+  const players = (games[key] || [userName ? userName.split(' ')[0] : '', '', '', '']).slice(0, 4);
+  while (players.length < 4) players.push('');
+  const book = (slotAttrs(c, start).match(/href="([^"]+)"/) || [])[1];
+  const gone = !g.length;
+  sheet.innerHTML = `<div class="sheet-card slotcard">
+    <button class="x" data-close aria-label="Fermer">×</button>
+    <div class="sc-club">${badge(c)}<div><b>${esc(c.name)}</b><small>${esc(c.city)}${kmLabel(c)}</small></div></div>
+    <div class="sc-when"><span class="sc-time">${start.slice(11, 16)}</span><span>${jour}</span></div>
+    <div class="sc-info">${gone ? '<span class="warn">Ce créneau n’est plus libre.</span>' : [durations, nCourts ? `${nCourts} terrain${nCourts > 1 ? 's' : ''} libre${nCourts > 1 ? 's' : ''}` : '', min != null ? `${perPlayer(min)}/joueur · ${min} € le terrain` : ''].filter(Boolean).join(' · ')}</div>
+    <div class="sc-sec">Joueurs <span id="sc-count"></span></div>
+    <div class="sc-players">${players.map((n, i) => `<label class="pl"><span class="pn">${i + 1}</span><input data-p="${i}" value="${esc(n)}" placeholder="${i === 0 ? 'Toi' : 'Joueur ' + (i + 1)}" autocomplete="off" maxlength="24"><i class="ok">✓</i></label>`).join('')}</div>
+    <div class="sc-actions">
+      <button class="sc-share" id="sc-share"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>Partager dans le groupe</button>
+      ${book ? `<a class="sc-book" id="sc-book" href="${book}" target="_blank" rel="noopener"></a>` : ''}
+    </div>
+    <button class="sc-reset" id="sc-reset">Vider la liste des joueurs</button>
+  </div>`;
+  sheet.classList.remove('hidden');
+  const refresh = () => {
+    const names = [...sheet.querySelectorAll('[data-p]')].map(i => i.value.trim());
+    const n = names.filter(Boolean).length;
+    games[key] = names; saveGames();
+    sheet.querySelectorAll('.pl').forEach((l, i) => l.classList.toggle('filled', !!names[i]));
+    $('sc-count').innerHTML = `<b class="${n >= 4 ? 'full' : ''}">${n}/4</b>`;
+    const b = $('sc-book');
+    if (b) { b.classList.toggle('ready', n >= 4); b.innerHTML = n >= 4 ? `On est 4 ✓ Réserver sur le site du club` : `Réserver sur le site du club <small>(${n}/4)</small>`; }
+  };
+  sheet.querySelectorAll('[data-p]').forEach(i => i.addEventListener('input', refresh));
+  refresh();
+  $('sc-share').onclick = async () => {
+    const names = (games[key] || []).filter(Boolean);
+    const lines = [`🎾 ${jourCourt} · ${start.slice(11, 16).replace(':', 'h')} · ${c.name} (${c.city})`,
+      [durations, min != null ? `${perPlayer(min)}/joueur` : ''].filter(Boolean).join(' · '),
+      names.length ? `Déjà chauds : ${names.join(', ')} (${names.length}/4)` : '',
+      names.length >= 4 ? 'On est 4, je réserve ! 🔥' : `Qui est chaud ?${userName ? ` (${userName.split(' ')[0]})` : ''}`].filter(Boolean);
+    const text = lines.join('\n'), url = appSlotUrl(c, start);
+    if (navigator.share) { try { await navigator.share({ text, url }); } catch {} }
+    else window.open('https://wa.me/?text=' + encodeURIComponent(text + '\n' + url), '_blank', 'noopener');
+  };
+  $('sc-reset').onclick = () => { delete games[key]; saveGames(); openSlot(clubId, start); };
+}
+function closeSlot() { $('slot-sheet').classList.add('hidden'); render(); }
 // Pastille d'un horaire : lien de réservation + bouton partager
 // « Nouveau depuis ta dernière visite » : créneaux apparus depuis la version vue la dernière fois (annulations surtout).
 // Les jours tout juste ouverts à la réservation ne comptent pas (sinon toute une journée serait « nouvelle »).
@@ -418,7 +511,7 @@ function slotChip(c, g, t) {
   const durations = [...new Set(g.map(s => s.duration))].sort((x, y) => x - y).map(dur).join('/');
   const sub = [nCourts ? `${nCourts} terr., ${durations}` : durations, prices.length ? `${perPlayer(Math.min(...prices))}/j` : ''].filter(Boolean).join(', ');
   const nw = g.some(s => isNew(c, s.start));
-  return `<div class="slotw${nw ? ' isnew' : ''}"><a class="slot" ${slotAttrs(c, g[0].start)}><b>${t}</b><small>${sub}</small>${nw ? newTag : ''}</a>${shareBtn(c, g[0].start, durations, prices)}</div>`;
+  return `<div class="slotw${nw ? ' isnew' : ''}"><a class="slot" data-slot="${c.id}|${g[0].start}" ${slotAttrs(c, g[0].start)}><b>${t}</b><small>${sub}</small>${nw ? newTag : ''}${countTag(c, g[0].start)}</a>${shareBtn(c, g[0].start)}</div>`;
 }
 // Créneaux d'un club pour une date, selon les filtres
 function filtered(a, d) {
@@ -498,7 +591,7 @@ function compactCard(c, a) {
     filtered(a, date).forEach(s => (groups[s.start.slice(11, 16)] ||= []).push(s));
     body = Object.entries(groups).map(([t, g]) => {
       const pr = g.map(s => s.price).filter(p => p != null);
-      return `<a class="mini${g.some(s => isNew(c, s.start)) ? ' isnew' : ''}" ${slotAttrs(c, g[0].start)}><b>${t}</b>${pr.length ? `<small>${perPlayer(Math.min(...pr))}</small>` : ''}</a>`;
+      return `<a class="mini${g.some(s => isNew(c, s.start)) ? ' isnew' : ''}" data-slot="${c.id}|${g[0].start}" ${slotAttrs(c, g[0].start)}><b>${t}</b>${countTag(c, g[0].start)}${pr.length ? `<small>${perPlayer(Math.min(...pr))}</small>` : ''}</a>`;
     }).join('') || '<span class="cempty">complet</span>';
   }
   return `<div class="ccard${isFav(c) ? ' fav' : ''}"><div class="ch">${badge(c)}<a href="#club-${c.id}">${esc(c.name)}</a><span class="cm">${esc(c.city)}${kmLabel(c)}</span>${starBtn(c)}</div><div class="minis">${body}</div></div>`;
@@ -555,7 +648,7 @@ function renderSearch() {
     }
     const p = r.prices.length ? `, ${perPlayer(Math.min(...r.prices))}/joueur` : '';
     const durs = [...r.durations].sort((a, b) => a - b).map(dur).join('/');
-    html += `<div class="roww"><a class="row" ${slotAttrs(r.c, r.start)}><b>${r.start.slice(11, 16)}</b><span class="c">${badge(r.c)}${isFav(r.c) ? '<i class="fs">★</i> ' : ''}${esc(r.c.name)}${isNew(r.c, r.start) ? ' ' + newTag : ''}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${durs}${p}</small></span></a>${shareBtn(r.c, r.start, durs, r.prices)}</div>`;
+    html += `<div class="roww"><a class="row" data-slot="${r.c.id}|${r.start}" ${slotAttrs(r.c, r.start)}><b>${r.start.slice(11, 16)}</b><span class="c">${badge(r.c)}${isFav(r.c) ? '<i class="fs">★</i> ' : ''}${esc(r.c.name)}${isNew(r.c, r.start) ? ' ' + newTag : ''}${countTag(r.c, r.start)}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${durs}${p}</small></span></a>${shareBtn(r.c, r.start)}</div>`;
   }
   if (rows.length > 60) html += `<div class="empty">… et ${rows.length - 60} autres créneaux.</div>`;
   return html;
@@ -740,17 +833,14 @@ function showUpdated() {
   compact = store.get('compact', false);
   $('compact').classList.toggle('on', compact);
   $('compact').onclick = () => { compact = !compact; store.set('compact', compact); $('compact').classList.toggle('on', compact); render(); };
+  games = store.get('games', {}); saveGames();
+  $('slot-sheet').addEventListener('click', e => { if (e.target.id === 'slot-sheet' || e.target.closest('[data-close]')) closeSlot(); });
   favs = new Set(store.get('favs', [])); hiddenClubs = new Set(store.get('hidden', []));
   $('list').addEventListener('click', async e => {
-    const fav = e.target.closest('[data-fav]'), hide = e.target.closest('[data-hide]'), sh = e.target.closest('.share');
+    const fav = e.target.closest('[data-fav]'), hide = e.target.closest('[data-hide]'), sh = e.target.closest('[data-slot]');
     if (fav) { e.preventDefault(); const id = fav.dataset.fav; favs.has(id) ? favs.delete(id) : favs.add(id); store.set('favs', [...favs]); render(); }
     else if (hide) { e.preventDefault(); const id = hide.dataset.hide; hiddenClubs.has(id) ? hiddenClubs.delete(id) : hiddenClubs.add(id); store.set('hidden', [...hiddenClubs]); if (mode === 'day') buildDays(); render(); }
-    else if (sh) {
-      e.preventDefault();
-      const text = sh.dataset.text, url = sh.dataset.url;
-      if (navigator.share) { try { await navigator.share(url ? { text, url } : { text }); } catch {} }
-      else window.open('https://wa.me/?text=' + encodeURIComponent(url ? text + '\n' + url : text), '_blank', 'noopener');
-    }
+    else if (sh) { e.preventDefault(); const i = sh.dataset.slot.indexOf('|'); openSlot(sh.dataset.slot.slice(0, i), sh.dataset.slot.slice(i + 1)); }
   });
   me = store.get('me', null);
   $('geo').classList.toggle('on', !!me);
@@ -766,6 +856,9 @@ function showUpdated() {
   setMode(prefs.mode === 'search' && !qd ? 'search' : 'day');
   setDate(qd && data.days.includes(qd) ? qd : data.days[0]);
   if (location.hash) route();
+  // Lien partagé vers un créneau : ?slot=clubId|start
+  const qs = new URLSearchParams(location.search).get('slot');
+  if (qs && qs.includes('|')) { const i = qs.indexOf('|'); openSlot(qs.slice(0, i), qs.slice(i + 1)); history.replaceState(null, '', location.pathname + location.search.replace(/[?&]slot=[^&]*/, '').replace(/^&/, '?')); }
   showUpdated(); setInterval(showUpdated, 60000);
   // Aide à l'installation : iPhone/iPad dans Safari, pas déjà installée, pas déjà fermée
   const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
