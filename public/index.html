@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Padel Nantes</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f6f7f4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Padel Nantes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --turf:#1F5FAE; --turf-deep:#184E92; --ink:#0D1B33; --mist:#EDF2F8; --surface:#fff;
+    --ball:#D8F03C; --muted:#5E6B80; --line:#D6E0EE; --warn:#B5531C; --soft:#E3ECF8;
+    --font:'Bricolage Grotesque', ui-rounded, system-ui, -apple-system, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --turf:#1C4F94; --turf-deep:#153E77; --ink:#EAF0F8; --mist:#0E1A2E; --surface:#15243C; --muted:#97A6BE; --line:#26385A; --soft:#1B2E4D; --warn:#F0A070; color-scheme: dark; }
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { background:var(--mist); }
+  body { margin:0; font:16px/1.45 var(--font); font-optical-sizing:auto; background:var(--mist); color:var(--ink); padding-bottom:calc(76px + env(safe-area-inset-bottom)); }
+  button, select, input { font-family:inherit; }
+  :focus-visible { outline:3px solid var(--ball); outline-offset:2px; }
+  .hidden { display:none !important; }
+
+  /* Le terrain : en-tête vu du dessus */
+  .court { position:relative; background:var(--turf); color:#fff; padding:calc(14px + env(safe-area-inset-top)) 16px 18px;
+    background-image:repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 34px, transparent 34px 68px); }
+  .court-top { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:14px; }
+  .court h1 { margin:0; font-size:26px; font-weight:800; font-stretch:80%; letter-spacing:-.01em; }
+  #updated { font-size:13px; color:rgba(255,255,255,.75); }
+  .pitch { position:relative; border:2px solid rgba(255,255,255,.85); border-radius:4px; padding:14px 14px 12px; }
+  .pitch::before { content:''; position:absolute; left:-2px; right:-2px; top:50%; border-top:2px dashed rgba(255,255,255,.55); }
+  .pitch > * { position:relative; z-index:1; }
+  .when { position:relative; display:flex; align-items:center; gap:10px; background:var(--turf-deep); border-radius:12px; padding:10px 14px; margin-bottom:22px; cursor:pointer; }
+  .when svg { flex:0 0 auto; }
+  .when input { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; }
+  #date-label { font-size:22px; font-weight:700; font-stretch:85%; line-height:1.15; }
+  #date-label::first-letter { text-transform:uppercase; }
+  .when .chev { margin-left:auto; opacity:.8; }
+  .presets { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin:0 -14px; padding:0 14px; }
+  .presets::-webkit-scrollbar, .days::-webkit-scrollbar { display:none; }
+  .presets .chip { background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.28); }
+  .presets .chip.on { background:var(--ball); color:#0D1B33; border-color:var(--ball); font-weight:700; }
+  .range { display:flex; align-items:center; gap:6px; margin-top:10px; font-size:14px; color:rgba(255,255,255,.85); }
+  .range select { background:transparent; color:#fff; border:1px solid rgba(255,255,255,.35); border-radius:9px; padding:6px 8px; font-size:15px; }
+  .range select option { color:#0D1B33; }
+
+  /* Barre collante : jours, filtres */
+  .bar { position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--mist) 88%, transparent); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); padding:10px 16px 8px; border-bottom:1px solid var(--line); }
+  .days { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin:0 -16px 8px; padding:0 16px; }
+  .day { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; width:54px; padding:6px 0 5px; border-radius:14px; border:0; background:var(--surface); color:var(--ink); cursor:pointer; transition:transform .12s; }
+  .day:active { transform:scale(.95); }
+  .day .wd { font-size:12px; color:var(--muted); text-transform:capitalize; }
+  .day .dn { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.2; }
+  .day .n { font-size:11px; font-weight:600; color:var(--turf); height:14px; font-variant-numeric:tabular-nums; }
+  .day.on { background:var(--ink); color:var(--mist); }
+  .day.on .wd { color:var(--mist); opacity:.75; }
+  .day.on .n { color:var(--ball); }
+  @media (prefers-color-scheme: dark) { .day.on { background:var(--turf); color:#fff; } .day.on .wd { color:#fff; } .day .n { color:var(--ball); } }
+  .controls { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin:0 -16px; padding:0 16px; }
+  .controls select, .chip { flex:0 0 auto; font-size:14px; padding:7px 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; }
+  .controls select { appearance:none; -webkit-appearance:none; padding-right:26px; background-image:linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position:calc(100% - 14px) 52%, calc(100% - 9px) 52%; background-size:5px 5px; background-repeat:no-repeat; }
+  .chip { transition:transform .12s, background .15s; }
+  .chip:active { transform:scale(.96); }
+  .chip.on { background:var(--turf); border-color:var(--turf); color:#fff; }
+  .wdays { display:flex; gap:5px; margin-bottom:8px; }
+  .wdays .chip { flex:1; padding:8px 0; text-align:center; font-weight:600; }
+
+  /* Contenu */
+  main { padding:16px 16px 24px; max-width:720px; margin:0 auto; }
+  .summary { font-size:21px; font-weight:600; font-stretch:90%; line-height:1.25; margin:2px 0 18px; }
+  .summary b { color:var(--turf); font-weight:800; }
+  @media (prefers-color-scheme: dark) { .summary b { color:var(--ball); } }
+  .banner { background:var(--soft); color:var(--muted); border-radius:12px; padding:8px 12px; font-size:13px; margin-bottom:14px; }
+  .install { display:flex; gap:10px; align-items:flex-start; background:var(--surface); border-radius:16px; padding:12px 14px; margin-bottom:16px; font-size:14px; }
+  .install button { margin-left:auto; border:0; background:none; font-size:20px; line-height:1; color:var(--muted); cursor:pointer; }
+
+  .club { padding:16px 0 18px; border-top:1px solid var(--line); }
+  .club:first-of-type, .summary + .club { border-top:0; padding-top:4px; }
+  .club h2 { margin:0; font-size:20px; font-weight:700; font-stretch:88%; }
+  .club h2 a { color:inherit; text-decoration:none; }
+  .club h2 a::after { content:''; display:inline-block; width:7px; height:7px; border-right:2px solid var(--muted); border-top:2px solid var(--muted); transform:rotate(45deg); margin:0 0 3px 8px; }
+  .meta { color:var(--muted); font-size:14px; margin:2px 0 12px; }
+  .count { color:var(--turf); font-weight:700; }
+  @media (prefers-color-scheme: dark) { .count { color:var(--ball); } }
+  .slots { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; }
+  .slot { display:flex; flex-direction:column; align-items:flex-start; text-decoration:none; color:var(--ink); background:var(--surface); border-radius:14px; padding:9px 12px 8px; border:1px solid var(--line); transition:transform .12s, border-color .15s; }
+  .slot:active { transform:scale(.96); border-color:var(--turf); }
+  .slot b { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+  .slot small { font-size:12px; color:var(--muted); line-height:1.3; }
+  .empty { color:var(--muted); font-size:14px; }
+  .err { color:var(--warn); font-size:14px; }
+  a.link { color:var(--turf); font-weight:600; }
+  @media (prefers-color-scheme: dark) { a.link { color:var(--ball); } }
+  .section { font-size:15px; font-weight:700; color:var(--muted); margin:26px 0 6px; }
+
+  /* Recherche */
+  .dhead { font-size:17px; font-weight:700; font-stretch:90%; margin:20px 0 8px; }
+  .dhead:first-child { margin-top:0; }
+  .row { display:flex; align-items:center; gap:14px; text-decoration:none; color:var(--ink); background:var(--surface); border-radius:14px; padding:11px 14px; margin-bottom:6px; }
+  .row:active { transform:scale(.98); }
+  .row b { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--turf); min-width:54px; }
+  @media (prefers-color-scheme: dark) { .row b { color:var(--ball); } }
+  .row .c { flex:1; font-weight:600; } .row small { color:var(--muted); display:block; font-size:13px; font-weight:400; }
+  .alertbox { background:var(--soft); border-radius:16px; padding:14px; margin-top:22px; font-size:14px; color:var(--ink); }
+  .alertbox pre { background:var(--surface); padding:10px; border-radius:10px; overflow-x:auto; font-size:12px; white-space:pre-wrap; word-break:break-all; }
+
+  /* Clubs */
+  .crow { display:block; text-decoration:none; color:var(--ink); padding:14px 0; border-top:1px solid var(--line); }
+  .crow:first-child { border-top:0; padding-top:2px; }
+  .crow .t { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:19px; font-weight:700; font-stretch:88%; }
+  .crow .t span { color:var(--muted); font-weight:400; font-size:22px; }
+  .crow small { display:block; color:var(--muted); font-size:14px; margin-top:2px; }
+  .crow .next { color:var(--turf); font-weight:700; }
+  @media (prefers-color-scheme: dark) { .crow .next { color:var(--ball); } }
+  .back { display:inline-block; color:var(--turf); text-decoration:none; font-weight:600; margin:0 0 10px; }
+  @media (prefers-color-scheme: dark) { .back { color:var(--ball); } }
+  .fiche h2 { margin:0 0 4px; font-size:30px; font-weight:800; font-stretch:80%; line-height:1.05; }
+  .actions { display:flex; gap:8px; margin:16px 0 6px; }
+  .actions a { flex:1; text-align:center; text-decoration:none; padding:12px; border-radius:14px; font-weight:700; font-size:15px; }
+  .actions .primary { background:var(--turf); color:#fff; }
+  .actions .secondary { background:var(--surface); color:var(--ink); border:1px solid var(--line); }
+  .fday { padding:14px 0; border-top:1px solid var(--line); }
+  .fday .d { font-weight:700; margin-bottom:10px; }
+
+  /* Onglets en bas, façon app */
+  .tabbar { position:fixed; left:0; right:0; bottom:0; z-index:10; display:flex; justify-content:space-around; padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+    background:color-mix(in srgb, var(--surface) 86%, transparent); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-top:1px solid var(--line); }
+  .tabbar button { flex:1; max-width:140px; display:flex; flex-direction:column; align-items:center; gap:2px; border:0; background:none; color:var(--muted); font-size:12px; font-weight:600; padding:4px 0; cursor:pointer; }
+  .tabbar svg { width:24px; height:24px; }
+  .tabbar button.on { color:var(--turf); }
+  @media (prefers-color-scheme: dark) { .tabbar button.on { color:var(--ball); } }
+
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+  @media (min-width:720px) { .court, .bar { padding-left:calc(50% - 344px); padding-right:calc(50% - 344px); } }
+</style>
+</head>
+<body>
+<header class="court">
+  <div class="court-top"><h1>Padel Nantes</h1><span id="updated"></span></div>
+  <div class="pitch">
+    <label class="when" id="when">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+      <span id="date-label"></span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      <input type="date" id="date" aria-label="Choisir le jour">
+    </label>
+    <div class="presets" id="presets"></div>
+    <div class="range">Ma plage : <select id="from" aria-label="Début"></select><select id="to" aria-label="Fin"></select></div>
+  </div>
+</header>
+<div class="bar">
+  <div class="days" id="days"></div>
+  <div class="wdays hidden" id="wdays"></div>
+  <div class="controls">
+    <select id="dur" aria-label="Durée"><option value="0">Toutes durées</option><option value="60">1h</option><option value="90">1h30</option><option value="120">2h</option></select>
+    <select id="city" aria-label="Ville"><option value="">Toutes les villes</option></select>
+    <button class="chip" id="geo">Près de moi</button>
+  </div>
+</div>
+<nav class="tabbar" aria-label="Vues">
+  <button id="tab-day" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Par jour</button>
+  <button id="tab-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Recherche</button>
+  <button id="tab-clubs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 12h16M12 3v18"/></svg>Clubs</button>
+</nav>
+<main>
+  <div class="install hidden" id="install"><span aria-hidden="true">📲</span><span>Pour l'avoir comme une app : touche <b>Partager</b> en bas de Safari, puis <b>Sur l'écran d'accueil</b>.</span><button id="install-x" aria-label="Fermer">×</button></div>
+  <div id="list">Chargement…</div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let data, avail = {}, date, mode = 'day', me = null, wdays = new Set([2, 4]);
+const dur = m => m % 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}` : `${m / 60}h`;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const store = { get(k, d) { try { return JSON.parse(localStorage.getItem('padel.' + k)) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem('padel.' + k, JSON.stringify(v)); } catch {} } };
+const weekday = d => { const n = new Date(d + 'T12:00').getDay(); return n === 0 ? 7 : n; };
+const toMin = t => +t.slice(0, 2) * 60 + +t.slice(3, 5);
+
+function km(c) {
+  if (!me || c.lat == null) return null;
+  const r = Math.PI / 180, dLat = (c.lat - me.lat) * r, dLng = (c.lng - me.lng) * r;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(me.lat * r) * Math.cos(c.lat * r) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.sqrt(a));
+}
+const kmLabel = c => { const d = km(c); return d == null ? '' : `, ${d < 10 ? d.toFixed(1).replace('.', ',') : Math.round(d)} km`; };
+
+function visibleClubs() {
+  const city = $('city').value;
+  return data.clubs.filter(c => !city || c.city === city);
+}
+// Créneaux d'un club pour une date, selon les filtres
+function filtered(a, d) {
+  const du = +$('dur').value, from = +$('from').value * 60, to = +$('to').value * 60;
+  if (mode === 'search' && !wdays.has(weekday(d))) return [];
+  return a.slots.filter(s => {
+    if (!s.start.startsWith(d) || (du && s.duration !== du)) return false;
+    const t = toMin(s.start.slice(11, 16));
+    return t >= from && t + s.duration <= to; // la partie tient entièrement dans la plage
+  });
+}
+
+function setDate(d) {
+  if (!data.days.includes(d)) return;
+  date = d;
+  $('date').value = d;
+  const t = fmtLong.format(new Date(d + 'T12:00'));
+  $('date-label').textContent = (d === data.days[0] ? "Aujourd'hui, " : d === data.days[1] ? 'Demain, ' : '') + t;
+  buildDays(); render();
+}
+
+function buildDays() {
+  const wd = new Intl.DateTimeFormat('fr-FR', { weekday: 'short' });
+  $('days').innerHTML = data.days.map(d => {
+    const dt = new Date(d + 'T12:00');
+    const n = visibleClubs().reduce((sum, c) => sum + new Set(filtered(avail[c.id], d).map(s => s.start.slice(11, 16))).size, 0);
+    return `<button class="day${d === date ? ' on' : ''}" data-d="${d}"><span class="wd">${wd.format(dt).replace('.', '')}</span><span class="dn">${dt.getDate()}</span><span class="n">${n ? n + ' libres' : ''}</span></button>`;
+  }).join('');
+  $('days').querySelectorAll('.day').forEach(b => b.onclick = () => setDate(b.dataset.d));
+  $('days').querySelector('.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+}
+
+function bookingAttrs(c) { return c.bookingUrl ? `href="${esc(c.bookingUrl)}" target="_blank" rel="noopener"` : ''; }
+
+function clubCard(c, a) {
+  const href = bookingAttrs(c);
+  const site = href ? ` <a class="link" ${href}>Site du club</a>` : '';
+  const courts = c.courts ? `${c.courts} terrain${c.courts > 1 ? 's' : ''}` : 'terrains ?';
+  let body, count = '';
+  if (a.status === 'non-branche') body = `<div class="empty">Créneaux pas encore consultables ici.${site}</div>`;
+  else if (a.status === 'adherents') body = `<div class="empty">Réservé aux adhérents du club.${site}</div>`;
+  else if (a.status === 'erreur') body = `<div class="err">Récupération impossible (${esc(a.error)}).${site}</div>`;
+  else if (!a.horizon || date > a.horizon) body = `<div class="empty">Pas encore ouvert à la réservation${a.horizon ? ` (ouvert jusqu'au ${new Date(a.horizon + 'T12:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })})` : ''}.${site}</div>`;
+  else {
+    const groups = {};
+    filtered(a, date).forEach(s => (groups[s.start.slice(11, 16)] ||= []).push(s));
+    const chips = Object.entries(groups).map(([t, ss]) => {
+      const nCourts = new Set(ss.map(s => s.court).filter(Boolean)).size;
+      const prices = ss.map(s => s.price).filter(p => p != null);
+      const durations = [...new Set(ss.map(s => s.duration))].sort((x, y) => x - y).map(dur).join('/');
+      const sub = [nCourts ? `${nCourts} terr., ${durations}` : durations, prices.length ? `dès ${Math.min(...prices)} €` : ''].filter(Boolean).join(', ');
+      return `<a class="slot" ${href}><b>${t}</b><small>${sub}</small></a>`;
+    }).join('');
+    const n = Object.keys(groups).length;
+    count = n ? `, <span class="count">${n} horaire${n > 1 ? 's' : ''} libre${n > 1 ? 's' : ''}</span>` : '';
+    body = chips ? `<div class="slots">${chips}</div>` : '<div class="empty">Complet sur ces critères.</div>';
+  }
+  return `<section class="club"><h2><a href="#club-${c.id}">${esc(c.name)}</a></h2><div class="meta">${esc(c.city)}${kmLabel(c)}, ${courts}${count}</div>${body}</section>`;
+}
+
+function renderDay() {
+  const live = [], other = [];
+  for (const c of visibleClubs()) {
+    const a = avail[c.id];
+    (['ok', 'fictif'].includes(a.status) ? live : other).push({ c, a, n: new Set(filtered(a, date).map(s => s.start)).size });
+  }
+  const byDist = (x, y) => (km(x.c) ?? 1e9) - (km(y.c) ?? 1e9);
+  live.sort(me ? byDist : (x, y) => y.n - x.n);
+  if (me) other.sort(byDist);
+  const nClubs = live.filter(x => x.n).length, nTimes = live.reduce((t, x) => t + x.n, 0);
+  const tr = `${$('from').value}h et ${$('to').value === '24' ? 'minuit' : $('to').value + 'h'}`;
+  const notOpen = live.length && live.every(x => !x.a.horizon || date > x.a.horizon);
+  let html = `<div class="summary">${notOpen ? `Le ${fmtShort.format(new Date(date + 'T12:00')).replace('.', '')} n'est pas encore ouvert à la réservation dans ces clubs.`
+    : nTimes ? `<b>${nTimes} créneau${nTimes > 1 ? 'x' : ''} libre${nTimes > 1 ? 's' : ''}</b> dans <b>${nClubs} club${nClubs > 1 ? 's' : ''}</b> le ${fmtLong.format(new Date(date + 'T12:00'))}, entre ${tr}.`
+    : `Aucun créneau libre le ${fmtLong.format(new Date(date + 'T12:00'))} entre ${tr}. Essaie une autre tranche ou l'onglet Recherche.`}</div>`;
+  html += live.map(x => clubCard(x.c, x.a)).join('');
+  if (other.length) html += `<div class="section">Autres clubs</div>` + other.map(x => clubCard(x.c, x.a)).join('');
+  return html;
+}
+
+function renderSearch() {
+  const rows = [];
+  for (const c of visibleClubs()) {
+    const a = avail[c.id];
+    if (!['ok', 'fictif'].includes(a.status)) continue;
+    const seen = {};
+    for (const d of data.days) for (const s of filtered(a, d)) {
+      const k = s.start;
+      if (!seen[k]) rows.push(seen[k] = { c, start: s.start, durations: new Set(), prices: [] });
+      seen[k].durations.add(s.duration); if (s.price != null) seen[k].prices.push(s.price);
+    }
+  }
+  rows.sort((x, y) => x.start.localeCompare(y.start) || ((km(x.c) ?? 0) - (km(y.c) ?? 0)));
+  const fmt = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  let html = '', last = '';
+  if (!wdays.size) return '<div class="empty">Choisis au moins un jour de la semaine.</div>';
+  if (!rows.length) html = '<div class="empty">Aucun créneau libre sur ces critères dans les 30 prochains jours.</div>';
+  for (const r of rows.slice(0, 60)) {
+    const d = r.start.slice(0, 10);
+    if (d !== last) { { const t = fmt.format(new Date(d + 'T12:00')); html += `<div class="dhead">${t[0].toUpperCase() + t.slice(1)}</div>`; } last = d; }
+    const p = r.prices.length ? `, dès ${Math.min(...r.prices)} €` : '';
+    html += `<a class="row" ${bookingAttrs(r.c)}><b>${r.start.slice(11, 16)}</b><span class="c">${esc(r.c.name)}<small>${esc(r.c.city)}${kmLabel(r.c)}, ${[...r.durations].sort((a, b) => a - b).map(dur).join('/')}${p}</small></span>›</a>`;
+  }
+  if (rows.length > 60) html += `<div class="empty">… et ${rows.length - 60} autres créneaux.</div>`;
+  // Veille prête à copier dans watches.json
+  const city = $('city').value;
+  const watch = { name: 'Ma recherche', days: [...wdays].sort(), from: `${String($('from').value).padStart(2, '0')}:00`, to: `${String($('to').value).padStart(2, '0')}:00` };
+  if (+$('dur').value) watch.duration = +$('dur').value;
+  if (city) watch.clubs = data.clubs.filter(c => c.city === city).map(c => c.id);
+  html += `<div class="alertbox">🔔 <b>Être prévenu</b> dès qu'un créneau de cette recherche se libère : ajoute ce bloc dans <code>watches.json</code> (voir le README).<pre id="watch">${esc(JSON.stringify(watch))}</pre><button class="chip" id="copy">Copier</button></div>`;
+  return html;
+}
+
+let detail = null; // id du club affiché en fiche
+
+function chipsFor(c, ss) {
+  const href = bookingAttrs(c);
+  const groups = {};
+  ss.forEach(s => (groups[s.start.slice(11, 16)] ||= []).push(s));
+  return Object.entries(groups).map(([t, g]) => {
+    const nCourts = new Set(g.map(s => s.court).filter(Boolean)).size;
+    const prices = g.map(s => s.price).filter(p => p != null);
+    const durations = [...new Set(g.map(s => s.duration))].sort((x, y) => x - y).map(dur).join('/');
+    const sub = [nCourts ? `${nCourts} terr., ${durations}` : durations, prices.length ? `dès ${Math.min(...prices)} €` : ''].filter(Boolean).join(', ');
+    return `<a class="slot" ${href}><b>${t}</b><small>${sub}</small></a>`;
+  }).join('');
+}
+
+const fmtShort = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+const fmtLong = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+const cap = t => t[0].toUpperCase() + t.slice(1);
+
+function renderClubs() {
+  const rows = visibleClubs().map(c => {
+    const a = avail[c.id];
+    const live = ['ok', 'fictif'].includes(a.status);
+    const week = data.days.slice(0, 7);
+    const nWeek = live ? week.reduce((n, d) => n + new Set(filtered(a, d).map(s => s.start)).size, 0) : 0;
+    let next = null;
+    if (live) for (const d of data.days) { const f = filtered(a, d); if (f.length) { next = f.sort((x, y) => x.start.localeCompare(y.start))[0]; break; } }
+    return { c, a, live, nWeek, next };
+  });
+  rows.sort((x, y) => (y.live - x.live) || (me ? (km(x.c) ?? 1e9) - (km(y.c) ?? 1e9) : y.nWeek - x.nWeek));
+  return rows.map(({ c, a, live, nWeek, next }) => {
+    let info;
+    if (!live) info = a.status === 'adherents' ? 'Réservé aux adhérents' : a.status === 'erreur' ? 'Récupération impossible pour le moment' : 'Créneaux pas encore consultables ici';
+    else if (next) info = `<span class="next">Prochain : ${fmtShort.format(new Date(next.start.slice(0, 10) + 'T12:00')).replace('.', '')} à ${next.start.slice(11, 16)}</span>, ${nWeek} horaire${nWeek > 1 ? 's' : ''} libre${nWeek > 1 ? 's' : ''} sur 7 jours`;
+    else info = 'Aucun créneau libre dans ta tranche sur 30 jours';
+    return `<a class="crow" href="#club-${c.id}"><div class="t">${esc(c.name)} <span>›</span></div><small>${esc(c.city)}${kmLabel(c)}${c.courts ? `, ${c.courts} terrain${c.courts > 1 ? 's' : ''}` : ''}</small><small>${info}</small></a>`;
+  }).join('');
+}
+
+function renderFiche(c) {
+  const a = avail[c.id];
+  const href = bookingAttrs(c);
+  const maps = c.lat != null ? `https://maps.apple.com/?daddr=${c.lat},${c.lng}&q=${encodeURIComponent(c.name)}` : `https://maps.apple.com/?q=${encodeURIComponent(c.address || c.name)}`;
+  let html = `<a class="back" href="#clubs">‹ Tous les clubs</a><div class="fiche"><h2>${esc(c.name)}</h2>
+    <div class="meta">${esc(c.address || c.city)}${kmLabel(c)}${c.courts ? `, ${c.courts} terrain${c.courts > 1 ? 's' : ''}` : ''}</div>
+    <div class="actions">${href ? `<a class="primary" ${href}>Réserver</a>` : ''}<a class="secondary" href="${maps}" target="_blank" rel="noopener">Itinéraire</a></div>
+    ${c.note ? `<div class="empty" style="margin:6px 0 4px">${esc(c.note)}</div>` : ''}</div>`;
+  if (!['ok', 'fictif'].includes(a.status)) {
+    const why = a.status === 'adherents' ? 'Réservé aux adhérents du club.' : a.status === 'erreur' ? `Récupération impossible (${esc(a.error)}).` : 'Les créneaux de ce club ne sont pas encore consultables ici.';
+    return html + `<div class="empty" style="margin-top:14px">${why} Utilise le bouton « Réserver » pour voir son planning.</div>`;
+  }
+  const tranche = `${$('from').value}h–${$('to').value === '24' ? '0h' : $('to').value + 'h'}`;
+  html += `<div class="section">Créneaux libres, ${tranche}${+$('dur').value ? ', ' + dur(+$('dur').value) : ''}</div>`;
+  let any = false;
+  for (const d of data.days) {
+    if (a.horizon && d > a.horizon) break;
+    const f = filtered(a, d);
+    if (!f.length) continue;
+    any = true;
+    html += `<div class="fday"><div class="d">${cap(fmtLong.format(new Date(d + 'T12:00')))}</div><div class="slots">${chipsFor(c, f)}</div></div>`;
+  }
+  if (!any) html += '<div class="empty">Aucun créneau libre dans ta tranche horaire.</div>';
+  if (a.horizon && a.horizon < data.days[data.days.length - 1]) html += `<div class="empty" style="margin-top:8px">Réservations ouvertes jusqu'au ${new Date(a.horizon + 'T12:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}.</div>`;
+  return html;
+}
+
+function render() {
+  let html = Object.values(avail).some(a => a.status === 'fictif') ? '<div class="banner">Mode test : créneaux fictifs.</div>' : '';
+  const fiche = mode === 'clubs' && detail && data.clubs.find(c => c.id === detail);
+  html += mode === 'day' ? renderDay() : mode === 'search' ? renderSearch() : fiche ? renderFiche(fiche) : renderClubs();
+  $('list').innerHTML = html;
+  $('copy')?.addEventListener('click', e => { navigator.clipboard?.writeText($('watch').textContent).then(() => e.target.textContent = 'Copié ✓', () => {}); });
+  store.set('prefs', { mode, from: $('from').value, to: $('to').value, dur: $('dur').value, city: $('city').value, wdays: [...wdays] });
+}
+
+function setMode(m) {
+  mode = m;
+  $('tab-day').classList.toggle('on', m === 'day');
+  $('tab-search').classList.toggle('on', m === 'search');
+  $('tab-clubs').classList.toggle('on', m === 'clubs');
+  if (m !== 'clubs') detail = null;
+  $('days').classList.toggle('hidden', m !== 'day');
+  $('when').classList.toggle('hidden', m !== 'day');
+  $('wdays').classList.toggle('hidden', m !== 'search');
+  if (m === 'day') buildDays();
+  render();
+  window.scrollTo(0, 0);
+}
+
+// Navigation : #club-<id> ouvre la fiche (le bouton retour du téléphone fonctionne, et le lien se partage)
+function route() {
+  const m = location.hash.match(/^#club-(.+)$/);
+  if (m) { detail = decodeURIComponent(m[1]); mode = 'clubs'; setMode('clubs'); detail = decodeURIComponent(m[1]); render(); window.scrollTo(0, 0); }
+  else if (location.hash === '#clubs') { detail = null; setMode('clubs'); }
+  else if (mode === 'clubs') { detail = null; setMode('day'); }
+}
+
+function showUpdated() {
+  const min = Math.round((Date.now() - Date.parse(data.generatedAt)) / 60000);
+  $('updated').textContent = min < 1 ? "à l'instant" : min < 60 ? `il y a ${min} min` : `il y a ${Math.round(min / 60)} h`;
+}
+
+(async () => {
+  try {
+    data = window.DEMO_DATA || await fetch('data.json', { cache: 'no-store' }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  } catch (e) {
+    $('list').innerHTML = `<div class="err">Impossible de charger les créneaux (${esc(e.message)}).</div>`;
+    return;
+  }
+  data.availability.forEach(a => avail[a.id] = a);
+  date = data.days[0];
+  $('date').min = data.days[0]; $('date').max = data.days[data.days.length - 1];
+  $('date').onchange = () => { if (data.days.includes($('date').value)) setDate($('date').value); else { $('date').value = date; alert('Choisis une date dans les 30 prochains jours.'); } };
+  const qd = new URLSearchParams(location.search).get('date');
+  const prefs = store.get('prefs', {});
+  $('from').innerHTML = Array.from({ length: 17 }, (_, i) => i + 7).map(h => `<option value="${h}">${h}h</option>`).join('');
+  $('to').innerHTML = Array.from({ length: 16 }, (_, i) => i + 9).map(h => `<option value="${h}">${h === 24 ? 'minuit' : h + 'h'}</option>`).join('');
+  // Plage : lien partagé (?de=18&a=21) > dernière plage utilisée > toute la journée
+  const q = new URLSearchParams(location.search);
+  $('from').value = q.get('de') || prefs.from || '7';
+  $('to').value = q.get('a') || prefs.to || '24';
+  if (!$('from').value) $('from').value = '7';
+  if (!$('to').value) $('to').value = '24';
+  const presets = [['Toute la journée', 7, 24], ['Matin', 9, 12], ['Midi', 12, 14], ['Après-midi', 14, 18], ['Soir', 18, 21], ['Fin de soirée', 20, 24]];
+  const markPreset = () => { $('presets').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.f === $('from').value && b.dataset.t === $('to').value)); const on = $('presets').querySelector('.on'); if (on) $('presets').scrollLeft = on.offsetLeft - 14; };
+  $('presets').innerHTML = presets.map(([l, f, t]) => `<button class="chip" data-f="${f}" data-t="${t}">${l}${f === 7 && t === 24 ? '' : ` ${f}h–${t === 24 ? '0h' : t + 'h'}`}</button>`).join('');
+  $('presets').querySelectorAll('button').forEach(b => b.onclick = () => { $('from').value = b.dataset.f; $('to').value = b.dataset.t; markPreset(); if (mode === 'day') buildDays(); render(); });
+  markPreset();
+  [...new Set(data.clubs.map(c => c.city))].sort().forEach(c => $('city').insertAdjacentHTML('beforeend', `<option>${esc(c)}</option>`));
+  if (prefs.city && data.clubs.some(c => c.city === prefs.city)) $('city').value = prefs.city;
+  if (prefs.dur) $('dur').value = prefs.dur;
+  if (prefs.wdays) wdays = new Set(prefs.wdays);
+  $('wdays').innerHTML = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((l, i) => `<button class="chip${wdays.has(i + 1) ? ' on' : ''}" data-w="${i + 1}">${l}</button>`).join('');
+  $('wdays').querySelectorAll('button').forEach(b => b.onclick = () => { const w = +b.dataset.w; wdays.has(w) ? wdays.delete(w) : wdays.add(w); b.classList.toggle('on'); render(); });
+  ['from', 'to', 'dur', 'city'].forEach(id => $(id).onchange = () => { if (+$('to').value <= +$('from').value) $('to').value = String(Math.min(24, +$('from').value + 2)); markPreset(); if (mode === 'day') buildDays(); render(); });
+  $('tab-search').onclick = () => { history.replaceState(null, '', location.pathname + location.search); setMode('search'); };
+  $('tab-clubs').onclick = () => { location.hash = 'clubs'; };
+  $('tab-day').onclick = () => { history.replaceState(null, '', location.pathname + location.search); setMode('day'); };
+  window.addEventListener('hashchange', route);
+  me = store.get('me', null);
+  $('geo').classList.toggle('on', !!me);
+  $('geo').onclick = () => {
+    if (me) { me = null; store.set('me', null); $('geo').classList.remove('on'); return render(); }
+    if (!navigator.geolocation) return;
+    $('geo').textContent = 'Localisation…';
+    navigator.geolocation.getCurrentPosition(p => {
+      me = { lat: p.coords.latitude, lng: p.coords.longitude }; store.set('me', me);
+      $('geo').textContent = 'Près de moi'; $('geo').classList.add('on'); render();
+    }, () => { $('geo').textContent = 'Près de moi'; alert('Position indisponible : autorise la localisation pour ce site dans les réglages.'); }, { maximumAge: 600000, timeout: 10000 });
+  };
+  setMode(prefs.mode === 'search' && !qd ? 'search' : 'day');
+  setDate(qd && data.days.includes(qd) ? qd : data.days[0]);
+  if (location.hash) route();
+  showUpdated(); setInterval(showUpdated, 60000);
+  // Aide à l'installation : iPhone/iPad dans Safari, pas déjà installée, pas déjà fermée
+  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  if (ios && !standalone && !store.get('installHidden', false)) $('install').classList.remove('hidden');
+  $('install-x').onclick = () => { $('install').classList.add('hidden'); store.set('installHidden', true); };
+})();
+</script>
+</body>
+</html>

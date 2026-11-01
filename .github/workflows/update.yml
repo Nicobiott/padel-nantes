@@ -1,0 +1,47 @@
+# Récupère les créneaux toutes les 30 minutes, envoie les alertes et publie l'app sur GitHub Pages.
+# GitHub peut décaler les tâches planifiées de quelques minutes aux heures chargées.
+name: Mise à jour des créneaux
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:      # bouton « Run workflow » pour lancer à la main
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests
+        run: node --test
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Récupérer les créneaux et envoyer les alertes
+        env:
+          PREVIOUS_DATA: ${{ steps.pages.outputs.base_url }}/data.json
+          PAGE_URL: ${{ steps.pages.outputs.base_url }}/
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          SECRETS: ${{ toJSON(secrets) }}   # canaux ntfy de chacun (NTFY_TOPIC_PAUL, etc.)
+        run: node collect.js
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - id: deploy
+        uses: actions/deploy-pages@v4
