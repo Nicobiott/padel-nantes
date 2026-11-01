@@ -1,0 +1,9 @@
+name: probe
+on: { push: { branches: [probe2] } }
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          UA="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"
+          for u in https://www.espark-23.fr/reservation/ https://www.espark-23.fr/padel/ https://www.espark-23.fr/; do echo "=== $u"; curl -sL -A "$UA" "$u" -o p.html; wc -c p.html; grep -oiE '(href|src)="[^"]*(apex|book|reserv|padel|playtomic|anybuddy|doinsport|gestion-sports|kiwi|tenup|wa\.me|tel:)[^"]*"' p.html | sort -u | head -30; grep -oiE '.{0,120}padel.{0,160}' p.html | sed 's/<[^>]*>//g' | sort -u | head -15; done
