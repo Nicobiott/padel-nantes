@@ -61,6 +61,15 @@ if (require.main === module) {
     for (const a of data.availability) {
       const name = clubs.find((c) => c.id === a.id).name;
       console.log(`${a.status.padEnd(11)} ${name}${a.status === 'ok' ? ` : ${a.slots.length} créneaux, jusqu'au ${a.horizon}` : a.error ? ` : ${a.error}` : ''}`);
+      if (a.status === 'ok') {
+        // Contrôle de couverture : horaires distincts en soirée (≥ 18h, en semaine) et le week-end
+        const wd = (d) => new Date(d + 'T12:00:00Z').getUTCDay();
+        const uniq = (f) => new Set(a.slots.filter(f).map((s) => s.start)).size;
+        const soir = uniq((s) => wd(s.start.slice(0, 10)) % 6 !== 0 && s.start.slice(11, 13) >= '18');
+        const we = uniq((s) => wd(s.start.slice(0, 10)) % 6 === 0);
+        const last = a.slots.reduce((m, s) => (s.start.slice(11, 16) > m ? s.start.slice(11, 16) : m), '00:00');
+        console.log(`            soirs semaine (≥18h) : ${soir} horaires · week-end : ${we} horaires · dernier départ : ${last}`);
+      }
     }
 
     // Alertes
