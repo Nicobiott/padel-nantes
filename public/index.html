@@ -263,6 +263,12 @@
   .pcount { display:inline-block; font-style:normal; font-size:10.5px; font-weight:800; color:var(--ink); border:1px solid var(--gold); border-radius:6px; padding:0 5px; margin-left:5px; vertical-align:2px; }
   .slot .pcount { margin:3px 0 0; } .pcount.full { background:var(--gold); color:#1A1405; }
 
+  /* Choix des villes */
+  .citybtn::after { content:''; display:inline-block; width:5px; height:5px; margin:0 0 3px 8px; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(45deg); opacity:.7; }
+  .citylist { display:flex; flex-wrap:wrap; gap:8px; }
+  .citylist .chip { font-size:15px; padding:10px 14px; }
+  .citylist .chip small { opacity:.65; font-weight:600; margin-left:2px; }
+
   /* Nouveaux créneaux */
   .newtag { display:inline-block; font-style:normal; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:#1A1405; background:var(--gold-grad); background-size:250% 100%; animation:shine 6s ease-in-out infinite; border-radius:6px; padding:1px 5px; margin-top:3px; }
   .row .c .newtag { margin:0 0 0 4px; vertical-align:2px; }
@@ -343,7 +349,7 @@
   <div class="wdays hidden" id="wdays"></div>
   <div class="controls">
     <select id="dur" aria-label="Durée"><option value="0">Toutes durées</option><option value="60">1h</option><option value="90">1h30</option><option value="120">2h</option></select>
-    <select id="city" aria-label="Ville"><option value="">Toutes les villes</option></select>
+    <button class="chip citybtn" id="city-btn" aria-haspopup="dialog">Toutes les villes</button>
     <button class="chip" id="geo">Près de moi</button>
     <button class="chip" id="compact">Vue compacte</button>
   </div>
@@ -353,6 +359,7 @@
   <button id="tab-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Recherche</button>
   <button id="tab-clubs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 12h16M12 3v18"/></svg>Clubs</button>
 </nav>
+<div class="sheet hidden" id="city-sheet" role="dialog" aria-modal="true" aria-label="Villes"></div>
 <div class="sheet hidden" id="slot-sheet" role="dialog" aria-modal="true" aria-label="Créneau"></div>
 <div class="sheet hidden" id="me-sheet" role="dialog" aria-modal="true" aria-labelledby="me-title">
   <form class="sheet-card" id="me-form">
@@ -392,9 +399,24 @@ const perPlayer = p => { const v = Math.round(p / 4 * 2) / 2; return (v % 1 ? v.
 let favs = new Set(), hiddenClubs = new Set();
 const isFav = c => favs.has(c.id);
 const favFirst = (x, y) => (isFav(y.c || y) - isFav(x.c || x));
+// Villes choisies (plusieurs possibles) ; vide = toutes
+let cities = new Set();
 function visibleClubs(includeHidden = false) {
-  const city = $('city').value;
-  return data.clubs.filter(c => (!city || c.city === city) && (includeHidden || !hiddenClubs.has(c.id)));
+  return data.clubs.filter(c => (!cities.size || cities.has(c.city)) && (includeHidden || !hiddenClubs.has(c.id)));
+}
+function cityLabel() {
+  if (!cities.size) return 'Toutes les villes';
+  const l = [...cities].map(c => c.split(/[ -]/)[0]);
+  return l.length <= 2 ? l.join(', ') : `${l.slice(0, 2).join(', ')} +${l.length - 2}`;
+}
+function openCities() {
+  const all = [...new Set(data.clubs.map(c => c.city))].sort((a, b) => a.localeCompare(b, 'fr'));
+  const n = city => data.clubs.filter(c => c.city === city && !hiddenClubs.has(c.id)).length;
+  const sh = $('city-sheet');
+  sh.innerHTML = `<div class="sheet-card"><h3>Villes</h3><p>Choisis une ou plusieurs villes. Aucune sélection = toutes.</p>
+    <div class="citylist">${all.map(c => `<button class="chip${cities.has(c) ? ' on' : ''}" data-city="${esc(c)}">${esc(c)} <small>${n(c)}</small></button>`).join('')}</div>
+    <div class="sheet-actions"><button type="button" class="sec" data-all>Toutes</button><button type="button" class="pri" data-ok>Valider</button></div></div>`;
+  sh.classList.remove('hidden');
 }
 // Badge rond aux initiales du club (teinte propre à chaque club)
 function badge(c) {
@@ -725,7 +747,7 @@ function render() {
   const fiche = mode === 'clubs' && detail && data.clubs.find(c => c.id === detail);
   html += mode === 'day' ? renderDay() : mode === 'search' ? renderSearch() : fiche ? renderFiche(fiche) : renderClubs();
   $('list').innerHTML = html;
-  store.set('prefs', { mode, from: $('from').value, to: $('to').value, dur: $('dur').value, city: $('city').value, wdays: [...wdays] });
+  store.set('prefs', { mode, from: $('from').value, to: $('to').value, dur: $('dur').value, cities: [...cities], wdays: [...wdays] });
 }
 
 function setMode(m) {
@@ -799,13 +821,21 @@ function showUpdated() {
   $('presets').innerHTML = presets.map(([l, f, t]) => `<button class="chip" data-f="${f}" data-t="${t}">${l}</button>`).join('');
   $('presets').querySelectorAll('button').forEach(b => b.onclick = () => { $('from').value = b.dataset.f; $('to').value = b.dataset.t; markPreset(); if (mode === 'day') buildDays(); render(); });
   markPreset();
-  [...new Set(data.clubs.map(c => c.city))].sort().forEach(c => $('city').insertAdjacentHTML('beforeend', `<option>${esc(c)}</option>`));
-  if (prefs.city && data.clubs.some(c => c.city === prefs.city)) $('city').value = prefs.city;
+  cities = new Set((prefs.cities || (prefs.city ? [prefs.city] : [])).filter(v => data.clubs.some(c => c.city === v)));
+  const syncCity = () => { $('city-btn').textContent = cityLabel(); $('city-btn').classList.toggle('on', cities.size > 0); };
+  syncCity();
+  $('city-btn').onclick = openCities;
+  $('city-sheet').addEventListener('click', e => {
+    const b = e.target.closest('[data-city]');
+    if (b) { const v = b.dataset.city; cities.has(v) ? cities.delete(v) : cities.add(v); b.classList.toggle('on'); return; }
+    if (e.target.closest('[data-all]')) { cities.clear(); $('city-sheet').querySelectorAll('[data-city]').forEach(x => x.classList.remove('on')); return; }
+    if (e.target.closest('[data-ok]') || e.target.id === 'city-sheet') { $('city-sheet').classList.add('hidden'); syncCity(); if (mode === 'day') buildDays(); render(); }
+  });
   if (prefs.dur) $('dur').value = prefs.dur;
   if (prefs.wdays) wdays = new Set(prefs.wdays);
   $('wdays').innerHTML = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((l, i) => `<button class="chip${wdays.has(i + 1) ? ' on' : ''}" data-w="${i + 1}">${l}</button>`).join('');
   $('wdays').querySelectorAll('button').forEach(b => b.onclick = () => { const w = +b.dataset.w; wdays.has(w) ? wdays.delete(w) : wdays.add(w); b.classList.toggle('on'); render(); });
-  ['from', 'to', 'dur', 'city'].forEach(id => $(id).onchange = () => { if (+$('to').value <= +$('from').value) $('to').value = String(Math.min(24, +$('from').value + 2)); markPreset(); if (mode === 'day') buildDays(); render(); });
+  ['from', 'to', 'dur'].forEach(id => $(id).onchange = () => { if (+$('to').value <= +$('from').value) $('to').value = String(Math.min(24, +$('from').value + 2)); markPreset(); if (mode === 'day') buildDays(); render(); });
   $('tab-search').onclick = () => { history.replaceState(null, '', location.pathname + location.search); setMode('search'); };
   $('tab-clubs').onclick = () => { location.hash = 'clubs'; };
   $('tab-day').onclick = () => { history.replaceState(null, '', location.pathname + location.search); setMode('day'); };
